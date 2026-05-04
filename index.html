@@ -1,335 +1,170 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Panel de Gestión — Compras</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
-body{background:#f8f9fa;color:#1a1a1a;font-size:14px}
-:root{--blue:#1e40af;--blue-bg:#dbeafe;--green:#166534;--green-bg:#dcfce7;--amber:#92400e;--amber-bg:#fef3c7;--red:#991b1b;--red-bg:#fee2e2;--purple:#5b21b6;--purple-bg:#ede9fe;--border:#e5e7eb;--muted:#6b7280;--surface:#fff;--page:#f3f4f6}
-button{cursor:pointer;font-family:inherit;font-size:13px;padding:5px 12px;border-radius:6px;border:.5px solid #d1d5db;background:#fff;color:#1a1a1a}
-button:hover{background:#f3f4f6}
-select,input,textarea{font-family:inherit;font-size:13px;padding:5px 8px;border-radius:6px;border:.5px solid #d1d5db;background:#fff;color:#1a1a1a;width:100%}
-select:focus,input:focus,textarea:focus{outline:none;border-color:#3b82f6}
-.badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;white-space:nowrap}
-.avatar{border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:600;flex-shrink:0}
-.card{background:var(--surface);border-radius:10px;border:.5px solid var(--border);padding:12px 14px}
-.metric{background:var(--page);border-radius:8px;padding:12px 14px}
-.metric .val{font-size:28px;font-weight:500;margin-top:4px}
-.metric .lbl{font-size:12px;color:var(--muted)}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th{padding:7px 10px;text-align:left;font-weight:500;color:var(--muted);border-bottom:.5px solid #d1d5db;white-space:nowrap}
-td{padding:7px 10px;border-bottom:.5px solid var(--border);vertical-align:middle}
-tr:hover td{background:#f9fafb;cursor:pointer}
-.tag{font-size:11px;padding:2px 7px;border-radius:99px;display:inline-block}
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;display:flex;align-items:center;justify-content:center}
-.modal{background:#fff;border-radius:12px;padding:1.5rem;width:500px;max-width:95vw;max-height:90vh;overflow-y:auto}
-.field{margin-bottom:10px}
-.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
-.nav-btn{font-size:13px;padding:4px 10px;border-radius:6px;border:none;background:transparent;color:#1a1a1a}
-.nav-btn.active{background:#e5e7eb;font-weight:500}
-.sem{display:inline-flex;align-items:center;gap:5px}
-.sem .dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0}
-#app{min-height:100vh}
-header{border-bottom:.5px solid var(--border);padding:0 1.25rem;display:flex;align-items:center;justify-content:space-between;height:50px;background:#fff}
-.content{padding:1.25rem}
-h2{font-size:18px;font-weight:500;margin-bottom:16px}
-h3{font-size:15px;font-weight:500;margin-bottom:10px}
-.grid-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:24px}
-.grid-team{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px}
-.grid-list{display:grid;gap:10px}
-.row-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
-.filters{display:flex;gap:6px;flex-wrap:wrap}
-.filters select{width:auto}
-.overflow{overflow-x:auto}
-.ms-btn{display:flex;align-items:center;justify-content:center;gap:10px;padding:9px;border-radius:8px;border:.5px solid #d1d5db;background:#fff;font-size:13px;font-weight:500;width:100%}
-.notice{background:#fef9c3;border:.5px solid #fde047;border-radius:8px;padding:8px 12px;font-size:12px;color:#854d0e;margin-top:10px}
-.sep{display:flex;align-items:center;gap:10px;margin:14px 0}
-.sep span{font-size:12px;color:var(--muted);white-space:nowrap}
-.sep hr{flex:1;border:none;border-top:.5px solid var(--border)}
-.login-list{display:flex;flex-direction:column;gap:5px}
-.login-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;border:.5px solid #d1d5db;background:#fff;cursor:pointer;text-align:left;width:100%}
-.login-item.sel{border:1.5px solid #3b82f6;background:#eff6ff}
-.login-name{font-size:13px;font-weight:500}
-.login-sub{font-size:11px;color:var(--muted)}
-.btn-primary{background:#2563eb;color:#fff;border:none;padding:10px;border-radius:8px;font-size:14px;font-weight:500;width:100%;margin-top:12px}
-.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;font-size:13px;margin-bottom:14px}
-.detail-key{font-size:11px;color:var(--muted)}
-.detail-val{font-weight:500}
-.mono{font-family:'Courier New',monospace;font-size:12px}
-</style>
-</head>
-<body>
-<div id="app"></div>
-<script>
-const ROLES={ADMIN:"admin",EDITOR:"editor",VISOR:"visor"};
-const USUARIOS=[
-  {id:1,nombre:"Edgardo Piñeiro",ini:"EP",rol:ROLES.ADMIN,tipo:"Manager"},
-  {id:2,nombre:"Carolina Collazo",ini:"CC",rol:ROLES.ADMIN,tipo:"Process Leader"},
-  {id:3,nombre:"Carolina Buceta",ini:"CB",rol:ROLES.ADMIN,tipo:"Process Leader"},
-  {id:4,nombre:"Cecilia Repetto",ini:"CR",rol:ROLES.ADMIN,tipo:"Process Leader"},
-  {id:5,nombre:"Gabriel Dávila",ini:"GD",rol:ROLES.ADMIN,tipo:"Process Leader"},
-  {id:6,nombre:"Cecilia Echenique",ini:"CE",rol:ROLES.EDITOR,tipo:"Analista"},
-  {id:7,nombre:"Pamela Ortiz",ini:"PO",rol:ROLES.EDITOR,tipo:"Analista"},
-  {id:8,nombre:"Luciana Sanguinetti",ini:"LS",rol:ROLES.EDITOR,tipo:"Analista"},
-  {id:9,nombre:"Mauricio Rezk",ini:"MR",rol:ROLES.EDITOR,tipo:"Analista"},
-  {id:10,nombre:"Natalia Beltrán",ini:"NB",rol:ROLES.EDITOR,tipo:"Analista"},
-  {id:11,nombre:"Florencia Ramos",ini:"FR",rol:ROLES.EDITOR,tipo:"Analista"},
-  {id:12,nombre:"Georgina Domeniguini",ini:"GDOM",rol:ROLES.EDITOR,tipo:"Asistente"},
-  {id:13,nombre:"Agustina Baldi",ini:"AB",rol:ROLES.EDITOR,tipo:"Asistente"},
-  {id:14,nombre:"Javier Schenone",ini:"JS",rol:ROLES.VISOR,tipo:"Gerencia A&F"},
-];
-const CATEGORIAS=[
-  {id:1,codigo:"NLP",nombre:"Negociación Largo Plazo",dias:3,tipo:"habiles"},
-  {id:2,codigo:"EMISIÓN",nombre:"Emisión de OC",dias:3,tipo:"habiles"},
-  {id:3,codigo:"SA",nombre:"Soporte Administrativo",dias:3,tipo:"habiles"},
-  {id:4,codigo:"ADJ.",nombre:"Adj. Directa",dias:3,tipo:"habiles"},
-  {id:5,codigo:"COT.",nombre:"Cotización",dias:7,tipo:"habiles"},
-  {id:6,codigo:"LP",nombre:"Llamado de Precios",dias:21,tipo:"corridos"},
-  {id:7,codigo:"LIC.S",nombre:"Licitación simple",dias:45,tipo:"corridos"},
-  {id:8,codigo:"LIC.",nombre:"Licitación",dias:120,tipo:"corridos"},
-];
-const ESTADOS=["Pendiente","En proceso","Completado","Cancelado"];
-const ESTADOS_LIC=["Publicada","En evaluación","Adjudicada","Desierta","Cancelada"];
-const ESTADOS_LOG=["Pendiente","En tránsito","Recibido","Con incidencia","Cerrado"];
-
-let state={
-  usuario:null,selLogin:null,modulo:"dashboard",
-  solicitudes:[
-    {id:1,nro:"70011845",pos:"11",fecha:"2026-05-01",material:"1201172",texto:"CHEMICALS -SIL CR HACH 21008-03 SIL STDR",cant:2,unidad:"UN",creadoPor:"R/Aguas-Eflu",fechaEnt:"2026-08-10",diasDesde:3,compIni:"AB",comentario:"",catId:null,estado:"Pendiente"},
-    {id:2,nro:"70011846",pos:"11",fecha:"2026-05-01",material:"1203650",texto:"VIBRATION SENSOR|SKF PULSE|CMDT 391-K-SL",cant:1,unidad:"PI",creadoPor:"R/Rep.Mant",fechaEnt:"2026-07-10",diasDesde:3,compIni:"AB",comentario:"",catId:null,estado:"Pendiente"},
-    {id:3,nro:"80001379",pos:"10",fecha:"2026-04-30",material:"507140",texto:"SLIDING PLATE L 330 W 116 MM",cant:40,unidad:"UN",creadoPor:"RBAZZO",fechaEnt:"2026-12-30",diasDesde:4,compIni:"GD",comentario:"",catId:null,estado:"En proceso"},
-  ],
-  licitaciones:[
-    {id:1,nro:"LIC-2026-01",desc:"Servicio de seguridad",estado:"En evaluación",respIni:"CC",fechaPub:"2026-04-01",fechaCierre:"2026-05-15",monto:"USD 120.000"},
-    {id:2,nro:"LIC-2026-02",desc:"Transporte de carga",estado:"Publicada",respIni:"CB",fechaPub:"2026-04-20",fechaCierre:"2026-06-01",monto:"USD 85.000"},
-  ],
-  logistica:[
-    {id:1,nro:"LOG-001",desc:"Entrega equipos informáticos",estado:"En tránsito",respIni:"AB",fechaEsp:"2026-05-07",proveedor:"Tech Supply SA",origen:"Buenos Aires"},
-    {id:2,nro:"LOG-002",desc:"Recepción mobiliario",estado:"Pendiente",respIni:"GDOM",fechaEsp:"2026-05-12",proveedor:"Muebles Norte",origen:"Montevideo"},
-  ],
-  categorias:[...CATEGORIAS],
-  filtroComp:"todos",filtroEst:"todos",
-  detalle:null,modal:null,
-};
-
-const HOY=new Date("2026-05-04");
-function esDiaHabil(d){const w=d.getDay();return w!==0&&w!==6;}
-function diasHabiles(f){let c=0,d=new Date(f);while(d<=HOY){if(esDiaHabil(d))c++;d.setDate(d.getDate()+1);}return Math.max(0,c-1);}
-function diasCorridos(f){return Math.max(0,Math.floor((HOY-new Date(f))/86400000));}
-function calcDias(f,cat){return cat?cat.tipo==="habiles"?diasHabiles(f):diasCorridos(f):0;}
-function getU(ini){return USUARIOS.find(u=>u.ini===ini);}
-function getCat(id){return state.categorias.find(c=>c.id===id);}
-function initials(n){return n.split(" ").map(x=>x[0]).join("").slice(0,2).toUpperCase();}
-function avatarStyle(rol,size){
-  const bg=rol===ROLES.ADMIN?"#dbeafe":rol===ROLES.EDITOR?"#dcfce7":"#fef3c7";
-  const color=rol===ROLES.ADMIN?"#1e40af":rol===ROLES.EDITOR?"#166534":"#92400e";
-  return `width:${size}px;height:${size}px;background:${bg};color:${color};font-size:${Math.round(size*.34)}px;`;
-}
-function avatarHTML(nombre,rol,size){return `<div class="avatar" style="${avatarStyle(rol,size)}">${initials(nombre)}</div>`;}
-function badgeColor(e){
-  const m={"Pendiente":["#fef3c7","#92400e"],"En proceso":["#dbeafe","#1e40af"],"Completado":["#dcfce7","#166534"],"Cancelado":["#fee2e2","#991b1b"],"Publicada":["#e0f2fe","#0369a1"],"En evaluación":["#fef9c3","#854d0e"],"Adjudicada":["#dcfce7","#166534"],"Desierta":["#f3f4f6","#374151"],"En tránsito":["#ede9fe","#5b21b6"],"Recibido":["#dcfce7","#166534"],"Con incidencia":["#fee2e2","#991b1b"],"Cerrado":["#f3f4f6","#374151"]};
-  return m[e]||["#f3f4f6","#374151"];
-}
-function badge(e){const[bg,c]=badgeColor(e);return `<span class="badge" style="background:${bg};color:${c}">${e}</span>`;}
-function semaforo(dias,cat){
-  if(!cat)return`<span style="color:var(--muted)">${dias}d</span>`;
-  const p=dias/cat.dias;
-  const[color,label]=p<.6?["#22c55e","En plazo"]:p<1?["#f59e0b","Por vencer"]:["#ef4444","Vencido"];
-  return`<span class="sem"><span class="dot" style="background:${color}"></span><span style="font-size:12px;color:${color};font-weight:500">${label}</span><span style="font-size:11px;color:var(--muted)">(${dias}/${cat.dias}d ${cat.tipo==="habiles"?"háb.":"corr."})</span></span>`;
-}
-
-function render(){document.getElementById("app").innerHTML=state.usuario?renderApp():renderLogin();bindEvents();}
-
-function renderLogin(){
-  return`<div style="padding:2rem;max-width:500px;margin:0 auto">
-    <h2 style="margin-bottom:4px">Panel de Gestión — Compras</h2>
-    <p style="color:var(--muted);font-size:14px;margin-bottom:20px">Seleccioná tu perfil para continuar</p>
-    <div class="card" style="margin-bottom:16px">
-      <button class="ms-btn" disabled style="opacity:.7">
-        <svg width="16" height="16" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
-        Iniciar sesión con Microsoft
-      </button>
-      <div class="notice">Pendiente de Client ID — IT registra la app en Azure AD para activar esta opción.</div>
-    </div>
-    <div class="sep"><hr><span>o seleccioná tu perfil</span><hr></div>
-    <div class="login-list">
-      ${USUARIOS.map(u=>`
-        <button class="login-item${state.selLogin===u.id?" sel":""}" data-login="${u.id}">
-          ${avatarHTML(u.nombre,u.rol,32)}
-          <div style="flex:1"><div class="login-name">${u.nombre}</div><div class="login-sub">${u.tipo} · ${u.ini}</div></div>
-          <span class="badge" style="background:${u.rol===ROLES.ADMIN?"#dbeafe":u.rol===ROLES.EDITOR?"#dcfce7":"#fef3c7"};color:${u.rol===ROLES.ADMIN?"#1e40af":u.rol===ROLES.EDITOR?"#166534":"#92400e"}">${u.rol}</span>
-        </button>`).join("")}
-    </div>
-    ${state.selLogin?`<button class="btn-primary" id="btn-ingresar">Ingresar como ${USUARIOS.find(u=>u.id===state.selLogin)?.nombre}</button>`:""}
-  </div>`;
-}
-
-function renderApp(){
-  const u=state.usuario;
-  const esAdmin=u.rol===ROLES.ADMIN;
-  const puedeEditar=u.rol!==ROLES.VISOR;
-  const navs=["dashboard","solicitudes","licitaciones","logistica",...(esAdmin?["config"]:[])];
-  const navLabels={dashboard:"Dashboard",solicitudes:"Solicitudes",licitaciones:"Licitaciones",logistica:"Logística",config:"Configuración"};
-  let content="";
-  if(state.modulo==="dashboard")content=renderDashboard();
-  else if(state.modulo==="solicitudes")content=renderSolicitudes(puedeEditar);
-  else if(state.modulo==="licitaciones")content=renderLicitaciones(puedeEditar);
-  else if(state.modulo==="logistica")content=renderLogistica(puedeEditar);
-  else if(state.modulo==="config"&&esAdmin)content=renderConfig();
-  return`
-    <header>
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:14px;font-weight:500">Compras</span>
-        <div style="display:flex;gap:2px">${navs.map(n=>`<button class="nav-btn${state.modulo===n?" active":""}" data-nav="${n}">${navLabels[n]}</button>`).join("")}</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px">
-        ${avatarHTML(u.nombre,u.rol,28)}
-        <div style="line-height:1.2"><div style="font-size:13px;font-weight:500">${u.nombre}</div><div style="font-size:11px;color:var(--muted)">${u.tipo} · ${u.ini}</div></div>
-        <button id="btn-salir" style="font-size:12px;color:var(--muted);border:none;background:transparent">Salir</button>
-      </div>
-    </header>
-    <div class="content">${content}</div>
-    ${state.detalle?renderDetalle(puedeEditar):""}
-    ${state.modal?renderModal():""}`;
-}
-
-function renderDashboard(){
-  const activas=state.solicitudes.filter(s=>!["Completado","Cancelado"].includes(s.estado));
-  const venc=activas.filter(s=>{const c=getCat(s.catId);return c&&calcDias(s.fecha,c)>c.dias;});
-  const sinCat=activas.filter(s=>!s.catId);
-  const licAct=state.licitaciones.filter(l=>!["Adjudicada","Desierta","Cancelada"].includes(l.estado));
-  return`<h2>Resumen general</h2>
-    <div class="grid-metrics">
-      ${[["Solicitudes activas",activas.length,"#1e40af"],["Vencidas",venc.length,"#991b1b"],["Sin categorizar",sinCat.length,"#92400e"],["Licitaciones activas",licAct.length,"#5b21b6"]].map(([l,v,c])=>`<div class="metric"><div class="lbl">${l}</div><div class="val" style="color:${c}">${v}</div></div>`).join("")}
-    </div>
-    <h3>Por comprador</h3>
-    <div class="grid-team">
-      ${USUARIOS.filter(u=>u.tipo==="Analista"||u.tipo==="Asistente").map(u=>{
-        const solU=state.solicitudes.filter(s=>s.compIni===u.ini&&!["Completado","Cancelado"].includes(s.estado));
-        const vencU=solU.filter(s=>{const c=getCat(s.catId);return c&&calcDias(s.fecha,c)>c.dias;});
-        return`<div class="card" style="display:flex;align-items:center;gap:10px">${avatarHTML(u.nombre,u.rol,30)}<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.nombre}</div><div style="font-size:11px;color:var(--muted);margin-bottom:4px">${u.tipo}</div><div style="display:flex;gap:5px;flex-wrap:wrap"><span class="tag" style="background:#dbeafe;color:#1e40af">${solU.length} activas</span>${vencU.length?`<span class="tag" style="background:#fee2e2;color:#991b1b">${vencU.length} vencidas</span>`:""}</div></div></div>`;
-      }).join("")}
-    </div>`;
-}
-
-function renderSolicitudes(puedeEditar){
-  const filtradas=state.solicitudes.filter(s=>(state.filtroComp==="todos"||s.compIni===state.filtroComp)&&(state.filtroEst==="todos"||s.estado===state.filtroEst));
-  return`<div class="row-top">
-      <h2 style="margin:0">Solicitudes de pedido</h2>
-      <div class="filters">
-        <select id="fil-comp" style="width:auto"><option value="todos">Todos los compradores</option>${USUARIOS.filter(u=>u.tipo==="Analista"||u.tipo==="Asistente").map(u=>`<option value="${u.ini}"${state.filtroComp===u.ini?" selected":""}>${u.nombre}</option>`).join("")}</select>
-        <select id="fil-est" style="width:auto"><option value="todos">Todos los estados</option>${ESTADOS.map(e=>`<option${state.filtroEst===e?" selected":""}>${e}</option>`).join("")}</select>
-        ${puedeEditar?`<button id="btn-import">Importar CSV</button><input type="file" id="file-csv" accept=".csv,.txt" style="display:none">`:""}
-      </div>
-    </div>
-    <div class="overflow"><table>
-      <thead><tr><th>Solicitud</th><th>Material</th><th>Texto breve</th><th>Creado por</th><th>Días</th><th>Estado</th><th>Categorización</th><th>Comentario</th></tr></thead>
-      <tbody>${filtradas.length?filtradas.map(s=>{
-        const cat=getCat(s.catId);const dias=cat?calcDias(s.fecha,cat):s.diasDesde;
-        return`<tr data-sol="${s.id}"><td style="font-weight:500;white-space:nowrap">${s.nro}<span style="color:var(--muted);font-weight:400">/${s.pos}</span></td><td class="mono">${s.material}</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.texto}</td><td style="white-space:nowrap">${s.creadoPor}</td><td style="white-space:nowrap">${semaforo(dias,cat)}</td><td>${badge(s.estado)}</td><td>${cat?`<span class="tag" style="background:#f3f4f6;color:#374151">${cat.codigo} — ${cat.nombre}</span>`:`<span style="font-size:12px;color:#f59e0b;font-weight:500">Sin categoría</span>`}</td><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)">${s.comentario||"—"}</td></tr>`;
-      }).join(""):`<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--muted)">No hay solicitudes con los filtros seleccionados</td></tr>`}</tbody>
-    </table></div>
-    <p style="font-size:12px;color:var(--muted);margin-top:8px">Hacé clic en una fila para ver el detalle y editar categorización o comentario.</p>`;
-}
-
-function renderLicitaciones(puedeEditar){
-  return`<div class="row-top"><h2 style="margin:0">Licitaciones</h2>${puedeEditar?`<button id="btn-lic-nueva" style="background:#dbeafe;color:#1e40af;border-color:#bfdbfe">+ Nueva</button>`:""}</div>
-    <div class="grid-list">${state.licitaciones.map(l=>{const resp=getU(l.respIni);return`<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px"><div><div style="font-weight:500;font-size:14px">${l.nro} — ${l.desc}</div><div style="font-size:12px;color:var(--muted);margin-top:3px">Responsable: ${resp?.nombre||l.respIni} · Publicación: ${l.fechaPub} · Cierre: ${l.fechaCierre}</div><div style="font-size:12px;color:var(--muted)">Monto estimado: ${l.monto}</div></div><div style="display:flex;align-items:center;gap:8px">${badge(l.estado)}${puedeEditar?`<select class="sel-lic-estado" data-lid="${l.id}" style="width:auto;font-size:12px">${ESTADOS_LIC.map(e=>`<option${l.estado===e?" selected":""}>${e}</option>`).join("")}</select>`:""}</div></div></div>`;}).join("")}</div>`;
-}
-
-function renderLogistica(puedeEditar){
-  return`<div class="row-top"><h2 style="margin:0">Coordinaciones logísticas</h2>${puedeEditar?`<button id="btn-log-nueva" style="background:#dbeafe;color:#1e40af;border-color:#bfdbfe">+ Nueva</button>`:""}</div>
-    <div class="grid-list">${state.logistica.map(l=>{const resp=getU(l.respIni);return`<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px"><div><div style="font-weight:500;font-size:14px">${l.nro} — ${l.desc}</div><div style="font-size:12px;color:var(--muted);margin-top:3px">Proveedor: ${l.proveedor} · Origen: ${l.origen} · Fecha esperada: ${l.fechaEsp}</div><div style="font-size:12px;color:var(--muted)">Responsable: ${resp?.nombre||l.respIni}</div></div><div style="display:flex;align-items:center;gap:8px">${badge(l.estado)}${puedeEditar?`<select class="sel-log-estado" data-lid="${l.id}" style="width:auto;font-size:12px">${ESTADOS_LOG.map(e=>`<option${l.estado===e?" selected":""}>${e}</option>`).join("")}</select>`:""}</div></div></div>`;}).join("")}</div>`;
-}
-
-function renderConfig(){
-  return`<h2>Configuración</h2>
-    <h3>Categorías y plazos estándar</h3>
-    <div style="display:grid;gap:8px;margin-bottom:14px">${state.categorias.map(c=>`<div style="display:flex;align-items:center;gap:8px;border:.5px solid var(--border);border-radius:8px;padding:8px 12px;background:#fff"><input class="cfg-cod" data-cid="${c.id}" value="${c.codigo}" style="width:70px"><input class="cfg-nom" data-cid="${c.id}" value="${c.nombre}" style="flex:1"><input type="number" class="cfg-dias" data-cid="${c.id}" value="${c.dias}" min="1" style="width:54px"><select class="cfg-tipo" data-cid="${c.id}" style="width:auto"><option value="habiles"${c.tipo==="habiles"?" selected":""}>Hábiles</option><option value="corridos"${c.tipo==="corridos"?" selected":""}>Corridos</option></select><button class="cfg-del" data-cid="${c.id}" style="color:#991b1b;border:none;background:transparent;font-size:12px">Eliminar</button></div>`).join("")}</div>
-    <button id="btn-cat-add">+ Agregar categoría</button>
-    <h3 style="margin-top:24px">Equipo</h3>
-    <div style="display:grid;gap:6px">${USUARIOS.map(u=>`<div style="display:flex;align-items:center;gap:10px;border:.5px solid var(--border);border-radius:8px;padding:7px 12px">${avatarHTML(u.nombre,u.rol,26)}<span style="flex:1;font-weight:500;font-size:13px">${u.nombre}</span><span class="mono" style="color:var(--muted)">${u.ini}</span><span style="color:var(--muted);font-size:12px">${u.tipo}</span><span class="badge" style="background:${u.rol===ROLES.ADMIN?"#dbeafe":u.rol===ROLES.EDITOR?"#dcfce7":"#fef3c7"};color:${u.rol===ROLES.ADMIN?"#1e40af":u.rol===ROLES.EDITOR?"#166534":"#92400e"}">${u.rol}</span></div>`).join("")}</div>`;
-}
-
-function renderDetalle(puedeEditar){
-  const s=state.detalle;const cat=getCat(s.catId);const dias=cat?calcDias(s.fecha,cat):s.diasDesde;const comp=getU(s.compIni);
-  return`<div class="modal-bg" id="modal-bg-det"><div class="modal">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
-      <div><div style="font-size:16px;font-weight:500">${s.nro} / ${s.pos}</div><div style="font-size:12px;color:var(--muted)">${s.texto}</div></div>
-      <button id="btn-det-close" style="border:none;background:transparent;font-size:16px;color:var(--muted)">✕</button>
-    </div>
-    <div class="detail-grid">${[["Material",`<span class="mono">${s.material}</span>`],["Cantidad",`${s.cant} ${s.unidad}`],["Creado por",s.creadoPor],["Fecha solicitud",s.fecha],["Fecha entrega",s.fechaEnt],["Comprador",comp?.nombre||s.compIni]].map(([k,v])=>`<div><div class="detail-key">${k}</div><div class="detail-val">${v}</div></div>`).join("")}</div>
-    <div style="border-top:.5px solid var(--border);padding-top:12px;display:grid;gap:10px">
-      <div class="field"><label>Categorización</label>${puedeEditar?`<select id="det-cat"><option value="">— Sin categoría —</option>${state.categorias.map(c=>`<option value="${c.id}"${s.catId===c.id?" selected":""}>${c.codigo} — ${c.nombre} (${c.dias}d ${c.tipo==="habiles"?"háb.":"corr."})</option>`).join("")}</select>`:`<div style="font-size:13px;font-weight:500">${cat?`${cat.codigo} — ${cat.nombre}`:"Sin categoría"}</div>`}</div>
-      ${cat?`<div style="font-size:13px">${semaforo(dias,cat)}</div>`:""}
-      <div class="field"><label>Estado</label>${puedeEditar?`<select id="det-est">${ESTADOS.map(e=>`<option${s.estado===e?" selected":""}>${e}</option>`).join("")}</select>`:`<div>${badge(s.estado)}</div>`}</div>
-      <div class="field"><label>Comentario</label>${puedeEditar?`<textarea id="det-com" rows="3" style="resize:vertical">${s.comentario||""}</textarea>`:`<div style="font-size:13px">${s.comentario||`<span style="color:var(--muted)">Sin comentarios</span>`}</div>`}</div>
-    </div>
-    ${puedeEditar?`<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px"><button id="btn-det-cancel">Cancelar</button><button id="btn-det-save" style="background:#dbeafe;color:#1e40af;border-color:#bfdbfe">Guardar</button></div>`:""}
-  </div></div>`;
-}
-
-function renderModal(){
-  const m=state.modal;
-  if(m==="lic")return`<div class="modal-bg" id="modal-bg-form"><div class="modal"><h3 style="margin-bottom:14px">Nueva licitación</h3>${[["Nro","lic-nro"],["Descripción","lic-desc"],["Monto estimado","lic-monto"],["Fecha publicación","lic-fpub"],["Fecha cierre","lic-fcie"]].map(([l,id])=>`<div class="field"><label>${l}</label><input id="${id}"></div>`).join("")}<div class="field"><label>Responsable</label><select id="lic-resp">${USUARIOS.filter(u=>u.rol===ROLES.ADMIN).map(u=>`<option value="${u.ini}">${u.nombre}</option>`).join("")}</select></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px"><button id="btn-modal-cancel">Cancelar</button><button id="btn-modal-save" style="background:#dbeafe;color:#1e40af;border-color:#bfdbfe">Guardar</button></div></div></div>`;
-  if(m==="log")return`<div class="modal-bg" id="modal-bg-form"><div class="modal"><h3 style="margin-bottom:14px">Nueva coordinación logística</h3>${[["Nro","log-nro"],["Descripción","log-desc"],["Proveedor","log-prov"],["Origen","log-orig"],["Fecha esperada","log-fesp"]].map(([l,id])=>`<div class="field"><label>${l}</label><input id="${id}"></div>`).join("")}<div class="field"><label>Responsable</label><select id="log-resp">${USUARIOS.filter(u=>u.tipo==="Analista"||u.tipo==="Asistente").map(u=>`<option value="${u.ini}">${u.nombre}</option>`).join("")}</select></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px"><button id="btn-modal-cancel">Cancelar</button><button id="btn-modal-save" style="background:#dbeafe;color:#1e40af;border-color:#bfdbfe">Guardar</button></div></div></div>`;
-  return"";
-}
-
-function g(id){return document.getElementById(id);}
-
-function bindEvents(){
-  document.querySelectorAll(".login-item").forEach(btn=>{btn.addEventListener("click",()=>{state.selLogin=Number(btn.dataset.login);render();});});
-  const bi=g("btn-ingresar");if(bi)bi.addEventListener("click",()=>{const u=USUARIOS.find(u=>u.id===state.selLogin);state.usuario=u;state.filtroComp=(u.tipo==="Analista"||u.tipo==="Asistente")?u.ini:"todos";state.modulo="dashboard";render();});
-  document.querySelectorAll(".nav-btn").forEach(b=>b.addEventListener("click",()=>{state.modulo=b.dataset.nav;render();}));
-  const bs=g("btn-salir");if(bs)bs.addEventListener("click",()=>{state.usuario=null;state.selLogin=null;render();});
-  const fc=g("fil-comp");if(fc)fc.addEventListener("change",()=>{state.filtroComp=fc.value;render();});
-  const fe=g("fil-est");if(fe)fe.addEventListener("change",()=>{state.filtroEst=fe.value;render();});
-  document.querySelectorAll("tr[data-sol]").forEach(tr=>{tr.addEventListener("click",()=>{state.detalle=state.solicitudes.find(s=>s.id===Number(tr.dataset.sol));render();});});
-  const bim=g("btn-import");const fcsv=g("file-csv");
-  if(bim&&fcsv){bim.addEventListener("click",()=>fcsv.click());fcsv.addEventListener("change",()=>{if(fcsv.files[0])importCSV(fcsv.files[0]);});}
-  const bdc=g("btn-det-close");if(bdc)bdc.addEventListener("click",()=>{state.detalle=null;render();});
-  const bdca=g("btn-det-cancel");if(bdca)bdca.addEventListener("click",()=>{state.detalle=null;render();});
-  const bds=g("btn-det-save");if(bds)bds.addEventListener("click",()=>{const s=state.detalle;const catId=Number(g("det-cat")?.value)||null;const est=g("det-est")?.value||s.estado;const com=g("det-com")?.value||"";state.solicitudes=state.solicitudes.map(x=>x.id===s.id?{...x,catId,estado:est,comentario:com}:x);state.detalle=null;render();});
-  const mbgd=g("modal-bg-det");if(mbgd)mbgd.addEventListener("click",e=>{if(e.target===mbgd){state.detalle=null;render();}});
-  document.querySelectorAll(".sel-lic-estado").forEach(sel=>{sel.addEventListener("change",()=>{const id=Number(sel.dataset.lid);state.licitaciones=state.licitaciones.map(l=>l.id===id?{...l,estado:sel.value}:l);render();});});
-  document.querySelectorAll(".sel-log-estado").forEach(sel=>{sel.addEventListener("change",()=>{const id=Number(sel.dataset.lid);state.logistica=state.logistica.map(l=>l.id===id?{...l,estado:sel.value}:l);render();});});
-  const bln=g("btn-lic-nueva");if(bln)bln.addEventListener("click",()=>{state.modal="lic";render();});
-  const blogn=g("btn-log-nueva");if(blogn)blogn.addEventListener("click",()=>{state.modal="log";render();});
-  const bmc=g("btn-modal-cancel");if(bmc)bmc.addEventListener("click",()=>{state.modal=null;render();});
-  const mbgf=g("modal-bg-form");if(mbgf)mbgf.addEventListener("click",e=>{if(e.target===mbgf){state.modal=null;render();}});
-  const bms=g("btn-modal-save");if(bms)bms.addEventListener("click",()=>{
-    if(state.modal==="lic"){state.licitaciones.push({id:Date.now(),nro:g("lic-nro").value,desc:g("lic-desc").value,estado:"Publicada",respIni:g("lic-resp").value,fechaPub:g("lic-fpub").value,fechaCierre:g("lic-fcie").value,monto:g("lic-monto").value});}
-    else{state.logistica.push({id:Date.now(),nro:g("log-nro").value,desc:g("log-desc").value,estado:"Pendiente",respIni:g("log-resp").value,fechaEsp:g("log-fesp").value,proveedor:g("log-prov").value,origen:g("log-orig").value});}
-    state.modal=null;render();
-  });
-  document.querySelectorAll(".cfg-cod").forEach(i=>i.addEventListener("change",()=>{const id=Number(i.dataset.cid);state.categorias=state.categorias.map(c=>c.id===id?{...c,codigo:i.value}:c);}));
-  document.querySelectorAll(".cfg-nom").forEach(i=>i.addEventListener("change",()=>{const id=Number(i.dataset.cid);state.categorias=state.categorias.map(c=>c.id===id?{...c,nombre:i.value}:c);}));
-  document.querySelectorAll(".cfg-dias").forEach(i=>i.addEventListener("change",()=>{const id=Number(i.dataset.cid);state.categorias=state.categorias.map(c=>c.id===id?{...c,dias:Number(i.value)}:c);}));
-  document.querySelectorAll(".cfg-tipo").forEach(i=>i.addEventListener("change",()=>{const id=Number(i.dataset.cid);state.categorias=state.categorias.map(c=>c.id===id?{...c,tipo:i.value}:c);}));
-  document.querySelectorAll(".cfg-del").forEach(b=>b.addEventListener("click",()=>{const id=Number(b.dataset.cid);state.categorias=state.categorias.filter(c=>c.id!==id);render();}));
-  const bca=g("btn-cat-add");if(bca)bca.addEventListener("click",()=>{state.categorias.push({id:Date.now(),codigo:"COD",nombre:"Nueva categoría",dias:7,tipo:"habiles"});render();});
-}
-
-function importCSV(file){
-  const reader=new FileReader();
-  reader.onload=e=>{
-    const lines=e.target.result.split("\n").filter(Boolean);
-    const sep=lines[0].includes("\t")?"\t":",";
-    const raw=lines.map(l=>l.split(sep));
-    const headers=raw[0].map(h=>h.trim().toLowerCase().replace(/[\s.]/g,"").replace(/[áàä]/g,"a").replace(/[éèë]/g,"e").replace(/[íìï]/g,"i").replace(/[óòö]/g,"o").replace(/[úùü]/g,"u"));
-    const nuevas=raw.slice(1).map((cols,i)=>{
-      const r={};headers.forEach((h,j)=>r[h]=(cols[j]||"").trim().replace(/^"|"$/g,""));
-      return{id:Date.now()+i,nro:r["solicituddepedido"]||r["nro"]||`IMP-${i+1}`,pos:r["possolicitudpedido"]||r["pos"]||"10",fecha:r["fechadesolicitud"]||r["fecha"]||"",material:r["material"]||"",texto:r["textobreve"]||r["descripcion"]||"",cant:Number(r["cantidadsolicitada"]||1),unidad:r["unidaddemedida"]||"UN",creadoPor:r["creadopor"]||"",fechaEnt:r["fechadeentrega"]||"",diasDesde:Number(r["diasdesdemod"]||r["diasdesde"]||0),compIni:r["comprador"]||"",comentario:r["comentario"]||"",catId:null,estado:"Pendiente"};
-    }).filter(s=>s.nro&&s.nro.trim());
-    state.solicitudes=[...state.solicitudes,...nuevas];render();
-  };
-  reader.readAsText(file);
-}
-
-render();
-</script>
-</body>
-</html>
+Solicitud de pedido;Pos.solicitud pedido;Fecha de solicitud;Organización compras;Grupo de compras;Material;Texto breve;Cantidad solicitada;Unidad de medida;Creado por;Fecha de entrega;Modificado el;Dias desde MOD;Comprador;Comentario;Categorización
+70011845;11;01/05/2026;;762;1201172;CHEMICALS -SIL CR HACH 21008-03 SIL STDR;2;UN;R/Aguas-Eflu;20260810;01/05/2026;03/01/1900;AB;;Cotización
+70011846;11;01/05/2026;;764;1203650;VIBRATION SENSOR|SKF PULSE|CMDT 391-K-SL;1;PI;R/ Rep. Mant;20260710;01/05/2026;03/01/1900;AB;;Cotización
+20105874;10;30/04/2026;2002;740;1100061;kit droga Cocaína - Marihuana;4;UN;JSCHLUEB;20260520;30/04/2026;04/01/1900;GDOM;;Adj. Directa
+20105878;10;30/04/2026;2001;755;;26-1744 Duo Wrap Upgrade Servicies;71750;UN;JUALVAREZ;20260515;30/04/2026;04/01/1900;MR;tipo solpe incorrecta;Adj. Directa
+20105883;10;30/04/2026;2002;740;1100061;Jabón para equipos de incendios;30;UN;JSCHLUEB;20260520;30/04/2026;04/01/1900;GDOM;;Adj. Directa
+20105884;10;30/04/2026;2001;801;;Servicio Catering 2026;1;UP;JCLAVIJO;20260508;30/04/2026;04/01/1900;CE;;Licitación Completa
+20105885;10;30/04/2026;2001;801;;Limpieza Oficinas CEPP;1;UP;JCLAVIJO;20260508;30/04/2026;04/01/1900;CE;;Licitación Completa
+20105886;10;30/04/2026;2002;560;;Vinilos;1;UN;LBALDI;20260508;30/04/2026;04/01/1900;GDOM;;Cotización
+20105887;10;30/04/2026;2001;801;;Serv. Mtto Area Verdes dentro ZFPP;1;UP;JCLAVIJO;20260508;30/04/2026;04/01/1900;NB;;NLP
+20105888;10;30/04/2026;2003;763;600072;Arena;56;TON;AISLAS;20260515;30/04/2026;04/01/1900;Materias Primas;;
+50015199;10;30/04/2026;2001;757;;1821-Soporte NEXO offer PE-26-131-067-r0;918876;UN;BMONTIGLIA;20260508;30/04/2026;04/01/1900;MR;;Adj. Directa
+50015200;10;30/04/2026;2001;343;;Reparación de boya Correntómetro;1;UN;LGONZALEZ;20260508;30/04/2026;04/01/1900;GDOM;;Emisión
+50015201;10;30/04/2026;2002;755;;26-1834-Butting Piping Offer 00332-26;1;UN;JUALVAREZ;20260511;30/04/2026;04/01/1900;CE;;Adj. Directa
+70011840;10;30/04/2026;;750;511024;FILTER ELEMENT MM |;60;UN;RBAZZO;20260507;30/04/2026;04/01/1900;AUSA;;
+70011841;10;30/04/2026;;750;511025;UPPER ATTACHMENT PLATE L 758 W 217 MM |;60;UN;RBAZZO;20260507;30/04/2026;04/01/1900;AUSA;;
+70011844;10;30/04/2026;;758;501791;COUPLING HALF FDMM275EM SPECIAL D219MMH7;1;UN;RGARCIAP;20260727;30/04/2026;04/01/1900;AUSA;;
+80001376;20;30/04/2026;2002;744;;Materiales para aplicación;1;UN;GBONASEA;20260508;30/04/2026;04/01/1900;CE;;Adj. Directa
+80001377;10;30/04/2026;2002;757;;FLEXIBLE HOSE DN350 Offer.250834FPF;1;UN;BMONTIGLIA;20260508;30/04/2026;04/01/1900;CE;;Adj. Directa
+80001379;10;30/04/2026;2002;750;507140;SLIDING PLATE L 330 W 116 MM;40;UN;RBAZZO;20261230;30/04/2026;04/01/1900;AB;;Adj. Directa
+80001379;20;30/04/2026;2002;750;509761;SHIM PLATE L 350 W 112 MM Dwg. 7029221;80;UN;RBAZZO;20261230;30/04/2026;04/01/1900;AB;;Adj. Directa
+80001379;30;30/04/2026;2002;750;518308;SUPPORT;40;UN;RBAZZO;20261230;30/04/2026;04/01/1900;AB;;Adj. Directa
+80001379;40;30/04/2026;2002;750;518309;PLATE EN10051 S235J2+N EN10025-2;80;UN;RBAZZO;20261230;30/04/2026;04/01/1900;AB;;Adj. Directa
+80001379;50;30/04/2026;2002;750;508482;HEX NUT ISO4032 | - M30 - | 8 ISO898-2 |;160;UN;RBAZZO;20261230;30/04/2026;04/01/1900;AB;;Adj. Directa
+80001379;60;30/04/2026;2002;750;518310;SOCKET HEAD CAP SCREW ISO4762 - M30X50;80;UN;RBAZZO;20261230;30/04/2026;04/01/1900;AB;;Adj. Directa
+80001379;70;30/04/2026;2002;750;518311;HEX THIN NUT ISO4035 - M30 ZINC-PLATED;80;UN;RBAZZO;20261230;30/04/2026;04/01/1900;AB;;Adj. Directa
+80001379;80;30/04/2026;2002;750;518312;HEX HEAD SCREW ISO4018 - M12X30 - 4.8 IS;80;UN;RBAZZO;20261230;30/04/2026;04/01/1900;AB;;Adj. Directa
+80001379;90;30/04/2026;2002;750;518313;SHEET EN10051 S235JR EN10025-2;80;UN;RBAZZO;20261230;30/04/2026;04/01/1900;AB;;Adj. Directa
+80001379;100;30/04/2026;2002;750;518314;PLAIN WASHER ISO7092 - 30 OD=50;80;UN;RBAZZO;20261230;30/04/2026;04/01/1900;AB;;Adj. Directa
+80001379;110;30/04/2026;2002;750;518315;WASHER Dwg. 702634151;80;UN;RBAZZO;20261230;30/04/2026;04/01/1900;AB;;Adj. Directa
+80001379;120;30/04/2026;2002;750;514996;SUPPORT LUG L 165 W 150 MM |;96;UN;RBAZZO;20261230;30/04/2026;04/01/1900;AB;;Adj. Directa
+80001379;130;30/04/2026;2002;750;518316;PIN Dwg. 702874020;48;UN;RBAZZO;20261230;30/04/2026;04/01/1900;AB;;Adj. Directa
+80001379;140;30/04/2026;2002;750;518317;KEY Dwg. 702874277;48;UN;RBAZZO;20261230;30/04/2026;04/01/1900;AB;;Adj. Directa
+80001379;150;30/04/2026;2002;750;518318;Inner Collar Stainless Steel;12;UN;RBAZZO;20261230;30/04/2026;04/01/1900;AB;;Adj. Directa
+20095506;20;29/04/2026;2003;761;100030;Soda Cáustica 100%;38000;T;CCOLLAZO;20271231;29/04/2026;05/01/1900;Materias Primas;;
+20105867;10;29/04/2026;2001;660;300030;Bidones de AGUA 20 LTRS;1;UN;JCONDE;20260515;29/04/2026;05/01/1900;GDOM;;SA
+20105873;10;29/04/2026;2001;765;;Fee anual PM Onshore 2025;1;UN;ELOVATTO;20260507;29/04/2026;05/01/1900;CR;;NLP
+20105873;20;29/04/2026;2001;765;;Fee anual PM Onshore 2026;1;UN;ELOVATTO;20260507;29/04/2026;05/01/1900;CR;;NLP
+70011833;11;29/04/2026;;761;1203812;Elemento filtrante 358-38-0172;2;UN;R/Linea de F;20260507;29/04/2026;05/01/1900;AB;;Cotización
+20105857;10;28/04/2026;2002;343;;Radiador de aceite . Puerto;1;UN;LGONZALEZ;20260506;28/04/2026;06/01/1900;GDOM;;Cotización
+20105864;10;28/04/2026;2002;755;;26-1736 Piping Paquete 1: Offer 00330-26;1;UN;JUALVAREZ;20260513;28/04/2026;06/01/1900;CE;;Emisión
+70011806;10;28/04/2026;;750;518226;VOLUTE CASING ACP80-400 SO | - PN10 EN10;1;UN;RBAZZO;20260803;28/04/2026;06/01/1900;AUSA;;
+70011807;10;28/04/2026;;750;518227;SLINGER RING ACP BS42 ACP2.0 126 X 92 X1;1;UN;RBAZZO;20260803;28/04/2026;06/01/1900;AUSA;;
+70011808;10;28/04/2026;;750;518228;SUPPORT LEG ACP BS42 CENTER HEIGHT 280 L;1;UN;RBAZZO;20260803;28/04/2026;06/01/1900;AUSA;;
+70011809;10;28/04/2026;;750;518229;COUPLING | VIVA ELASTOMERIC VS150 HCB DB;1;UN;RBAZZO;20260803;28/04/2026;06/01/1900;AUSA;;
+70011812;10;28/04/2026;;748;518002;BOARD POWER | PROMINENT 734942 | FOR PRO;2;UN;RPEREZ;20260803;28/04/2026;06/01/1900;AUSA;;
+70011813;10;28/04/2026;;748;518003;CONTROL BOARD | PROMINENT | 1047697 | FO;2;UN;RPEREZ;20260803;28/04/2026;06/01/1900;AUSA;;
+70011814;10;28/04/2026;;748;518004;BOARD CONTROL | PROMINENT 733607 | FOR P;2;UN;RPEREZ;20260803;28/04/2026;06/01/1900;AUSA;;
+70011815;10;28/04/2026;;748;518010;BOARD POWER | PROMINENT 734939/01 | FOR;2;UN;RPEREZ;20260803;28/04/2026;06/01/1900;AUSA;;
+70011816;10;28/04/2026;;748;518005;BOARD POWER | PROMINENT 733727 | FOR PRO;2;UN;RPEREZ;20260803;28/04/2026;06/01/1900;AUSA;;
+70011817;10;28/04/2026;;748;518009;PROFIBUS MODULE DELTA | PROMINENT | SXCB;2;UN;RPEREZ;20260803;28/04/2026;06/01/1900;AUSA;;
+70011818;10;28/04/2026;;748;518011;BOARD POWER | PROMINENT 734940/01 | FOR;2;UN;RPEREZ;20260803;28/04/2026;06/01/1900;AUSA;;
+70011819;10;28/04/2026;;748;518012;BOARD POWER | PROMINENT 735102 | FOR GAM;2;UN;RPEREZ;20260803;28/04/2026;06/01/1900;AUSA;;
+70011820;10;28/04/2026;;748;518013;BOARD POWER | PROMINENT 733910/04 | FOR;2;UN;RPEREZ;20260803;28/04/2026;06/01/1900;AUSA;;
+70011821;10;28/04/2026;;748;518014;BOARD POWER | PROMINENT 733927 | FOR SIG;2;UN;RPEREZ;20260803;28/04/2026;06/01/1900;AUSA;;
+70011822;10;28/04/2026;;748;518015;BOARD RELAY OUTPUT | PROMINENT 105056/05;2;UN;RPEREZ;20260803;28/04/2026;06/01/1900;AUSA;;
+70011823;10;28/04/2026;;748;518016;ACCESSORY LONG BOARD CARRERA | PROMINENT;2;UN;RPEREZ;20260803;28/04/2026;06/01/1900;AUSA;;
+70011824;10;28/04/2026;;748;518017;CONTROL PANEL | PROMINENT 1092867 | FOR;2;UN;RPEREZ;20260803;28/04/2026;06/01/1900;AUSA;;
+70011825;10;28/04/2026;;748;518077;POSITION SENSOR | PROMINENT 734069 |;2;UN;RPEREZ;20260803;28/04/2026;06/01/1900;AUSA;;
+70011826;10;28/04/2026;;748;518018;CONTROL PANEL | PROMINENT 1083686 | FOR;2;UN;RPEREZ;20260803;28/04/2026;06/01/1900;AUSA;;
+70011827;10;28/04/2026;;748;518242;OPERATOR PANEL | SIEMENS 6AV2124-0XC02-0;1;UN;RPEREZ;20260803;28/04/2026;06/01/1900;AUSA;;
+70011828;10;28/04/2026;;748;518244;FREQUENCY CONVERTER | ABB | ACS880-01-03;1;UN;RPEREZ;20260803;28/04/2026;06/01/1900;AUSA;;
+70011829;10;28/04/2026;;748;518243;FREQUENCY CONVERTER | KONECRANES 5229267;1;UN;RPEREZ;20260803;28/04/2026;06/01/1900;AUSA;;
+70011830;10;28/04/2026;;748;518259;AMATURES - LIGHTING FIXTURES ACC. TO DWG;15;UN;RPEREZ;20260803;28/04/2026;06/01/1900;AUSA;;
+70011831;10;28/04/2026;;748;515124;LOCKING DEVICE SET (LOCKING-, HANDLE-, &;1;UN;RPEREZ;20260729;28/04/2026;06/01/1900;AUSA;;
+70011832;10;28/04/2026;;748;503531;"PRESS RED VALVE HONEYW D06F DN40  1 1/2""";1;UN;RPEREZ;20251117;28/04/2026;06/01/1900;AUSA;;
+50015190;10;27/04/2026;2001;754;;26-1642-Servicio Cidra;4855;UN;FEFERREIRA;20260518;27/04/2026;07/01/1900;MR;;SA
+50015191;10;27/04/2026;2001;100;300034;Serv de consultoría - Elaboración Infome;15000;UN;FVARELA;20260630;27/04/2026;07/01/1900;GDOM;;SA
+70011805;10;27/04/2026;;765;518230;FLOW METER | JOHNCRANE | SFP-C-08-10-G1/;1;UN;RBAZZO;20260803;27/04/2026;07/01/1900;AUSA;;
+70011803;10;24/04/2026;;750;518274;INTERNAL GEAR PUMP | VIKING PUMP 7496790;1;UN;RBAZZO;20260803;24/04/2026;10/01/1900;AUSA;;Adj. Directa
+20105812;10;23/04/2026;2001;342;;balanza analítica;1;UN;LBALDI;20260430;23/04/2026;11/01/1900;GD;;SA
+70011797;10;22/04/2026;;744;511329;PIPE SFS5166 | PN10 ID=300 T=5 | FRP FIB;3;UN;GBONASEA;20260723;22/04/2026;12/01/1900;AUSA;;
+70011798;10;22/04/2026;;744;512570;1RL-215/290X35/C Labyrinth INPRO Bearing;1;UN;GBONASEA;20260422;22/04/2026;12/01/1900;AUSA;;
+70011799;10;22/04/2026;;744;512571;1RL-235/350X35/D Labyrinth INPRO Bearing;1;UN;GBONASEA;20260422;22/04/2026;12/01/1900;AUSA;;
+80001367;10;22/04/2026;2001;750;;Gerenciamiento Proyecto y Mano de Obra;1;UN;RBAZZO;20270507;22/04/2026;12/01/1900;MR;;Adj. Directa
+80001367;20;22/04/2026;2001;750;;Supervisión y Mano de Obra extranjera;1;UN;RBAZZO;20270507;22/04/2026;12/01/1900;MR;;Adj. Directa
+80001367;30;22/04/2026;2001;750;;Implantación,contenedor,generador;1;UN;RBAZZO;20270507;22/04/2026;12/01/1900;MR;;Adj. Directa
+80001367;40;22/04/2026;2001;750;;Alojamientos para personal extranjero;1;UN;RBAZZO;20270507;22/04/2026;12/01/1900;MR;;Adj. Directa
+80001367;50;22/04/2026;2001;750;;Traslados personal extranjero;1;UN;RBAZZO;20270507;22/04/2026;12/01/1900;MR;;Adj. Directa
+20105789;10;21/04/2026;2002;759;;Medidor de humedad;1;UN;ELOVATTO;20260430;21/04/2026;13/01/1900;AB;;Cotización
+70011769;10;21/04/2026;;741;512126;DATA CABLE | KJAAM 2X(2+1)X0,5 | OD=8.5;1000;UN;DALCETEGARAY;20260428;21/04/2026;13/01/1900;AUSA;;
+70011771;10;21/04/2026;;741;503788;PROBE - HUMIDITY / TEMPERATURE  EDGET;1;UN;DALCETEGARAY;20260624;21/04/2026;13/01/1900;AUSA;;
+70011772;10;21/04/2026;;765;501162;LOCK NUT DIN981-HM 30/800-TR800X7;1;UN;MAROCENA.EXT;20260720;21/04/2026;13/01/1900;AUSA;;
+70011773;10;21/04/2026;;765;501790;COUPLING REXNORD VIVA V245 90H7/80H7;1;UN;MAROCENA.EXT;20260727;21/04/2026;13/01/1900;AUSA;;
+70011780;10;21/04/2026;;765;512241;V-BELT PULLEY | 355X5 | SPB | FOR BUSH T;1;UN;MAROCENA.EXT;20260602;21/04/2026;13/01/1900;AUSA;;
+70011781;10;21/04/2026;;765;512287;V-BELT PULLEY TB | DESCH ANTRIEBSTECHNIK;1;UN;MAROCENA.EXT;20260602;21/04/2026;13/01/1900;AUSA;;
+70011783;10;21/04/2026;;765;512264;PULLEY SPB300X5-TL3535 |;1;UN;MAROCENA.EXT;20260602;21/04/2026;13/01/1900;AUSA;;
+70011785;10;21/04/2026;;765;512227;V-BELT PULLEY ISO4183 | - SPB - TL/3535;1;UN;MAROCENA.EXT;20260602;21/04/2026;13/01/1900;AUSA;;
+20105758;10;20/04/2026;2002;755;;26-1737 MACHINE HALL VENTILATION;555000;UN;JUALVAREZ;20260504;23/04/2026;11/01/1900;MR;;Adj. Directa
+50015167;10;18/04/2026;2001;754;;26-1710-Lic. Etapa 2;1;UN;FEFERREIRA;20260727;18/04/2026;16/01/1900;MR;;Licitación Completa
+20105728;10;16/04/2026;2001;757;;1832-Licitacion civil;1;UN;ELOVATTO;20260424;27/04/2026;07/01/1900;MR;;Licitación Completa
+70011759;10;16/04/2026;;758;518196;ROLLER CHAIN 76 LINKS 5,791 M L 5791 MM;1;UN;RGARCIAP;20260504;16/04/2026;18/01/1900;AUSA;;
+70011760;10;16/04/2026;;758;518206;CHAIN WHEEL RCA60 L 1220 W 1219 H 224.94;1;UN;RGARCIAP;20260504;16/04/2026;18/01/1900;AUSA;;
+70011763;10;16/04/2026;;758;509469;SHAFT HOLLOW | SEW 02893126 |;1;UN;RGARCIAP;20260415;16/04/2026;18/01/1900;AUSA;;
+70011764;10;16/04/2026;;758;512043;STEEL WIRE ROPE | CERTEX | VEROPRO8;2;UN;RGARCIAP;20260603;16/04/2026;18/01/1900;AUSA;;
+70011750;10;15/04/2026;;765;504364;CHECK VALVE  SWAGELOK  SS-6C-MM-1  6M;1;UN;FTOURN;20260716;15/04/2026;19/01/1900;AUSA;;
+70011751;10;15/04/2026;;765;507295;SENSOR MAGNETOSTRICTIVE | BALLUFF BTL7-E;1;UN;FTOURN;20260330;15/04/2026;19/01/1900;AUSA;;
+20105688;10;14/04/2026;2003;763;100007;Metabisulfito de Sodio (Na2S2O5);520;T;AISLAS;20260706;14/04/2026;20/01/1900;Materias Primas;;
+20105696;10;14/04/2026;2002;660;300030;Chaqueta con Mosquitero/Abejas;5;UN;JCONDE;20260428;23/04/2026;11/01/1900;GDOM;;Cotización
+70011736;10;13/04/2026;;747;513992;REPAIR KIT | PARKER | RK-PVBG2ZYT40 |;1;UN;GALVAREZ;20260713;13/04/2026;21/01/1900;AUSA;;
+70011737;10;13/04/2026;;747;514009;REPAIR KIT | PARKER | RK-PVBG2KOS40 |;1;UN;GALVAREZ;20260713;13/04/2026;21/01/1900;AUSA;;
+70011738;10;13/04/2026;;747;514015;SEAL KIT FOR PUMP PVO46R1KT1NMMC | PARKE;1;UN;GALVAREZ;20260713;13/04/2026;21/01/1900;AUSA;;
+70011739;10;13/04/2026;;747;514020;REPAIR KIT | PARKER | RK-PVBG2NHS40 |;1;UN;GALVAREZ;20260713;13/04/2026;21/01/1900;AUSA;;
+70011740;10;13/04/2026;;747;514021;REPAIR KIT | PARKER | RK-PVBG2SSR40 |;1;UN;GALVAREZ;20260713;13/04/2026;21/01/1900;AUSA;;
+70011734;10;10/04/2026;;765;501637;SEALING KIT CDH. 63/45 TYPE M R900847;1;UN;MAROCENA.EXT;20260624;10/04/2026;24/01/1900;AUSA;;
+20105645;10;09/04/2026;2002;511;300034;Cloruro de Calcio;1000;UN;JVIQUE;20260416;09/04/2026;25/01/1900;CE;;Cotización
+70011722;10;09/04/2026;;765;503679;PRESS TANSM YOKOGAWA EJX530A-EAS7N-012DN;1;UN;ANDRITZ1;20260713;09/04/2026;25/01/1900;AUSA;;
+70011723;10;09/04/2026;;765;518124;CONTROLLER DIGITAL | HACH LXV525.99A1150;1;UN;ANDRITZ1;20260402;09/04/2026;25/01/1900;AUSA;;
+70011724;10;09/04/2026;;765;518123;CLEANING KIT | HACH | 8573100-LM | CL17S;1;UN;ANDRITZ1;20260402;09/04/2026;25/01/1900;AUSA;;
+70011725;10;09/04/2026;;765;518122;KIT TUBING (PRE-ASSEMBLED) | HACH 856040;1;UN;ANDRITZ1;20260504;09/04/2026;25/01/1900;AUSA;;
+70011726;10;09/04/2026;;765;518116;ACCESSORY | POSITIONER | GEORG FISCHER 1;1;UN;ANDRITZ1;20260402;09/04/2026;25/01/1900;AUSA;;
+70011727;10;09/04/2026;;765;518117;SPARE PART LINEAR BALL | GEORG FISCHER 1;1;UN;ANDRITZ1;20260402;09/04/2026;25/01/1900;AUSA;;
+70011728;10;09/04/2026;;765;518118;INTERFACE MODULE | GEORG FISCHER 198 546;1;UN;ANDRITZ1;20260402;09/04/2026;25/01/1900;AUSA;;
+70011713;10;08/04/2026;;765;504306;SET OF 2 WHEEL BANDS FOR THICKENER RS;2;UN;ANDRITZ1;20260714;08/04/2026;26/01/1900;AUSA;;
+70011708;10;07/04/2026;;765;518119;ADAPTER FIRE NETWORK | HONEYWELL Q7055C1;1;UN;ANDRITZ1;20260402;07/04/2026;27/01/1900;AUSA;;
+70011709;10;07/04/2026;;765;503498;CONVERTER - TRS CONVERTER KONTRAM;1;UN;ANDRITZ1;20260128;07/04/2026;27/01/1900;AUSA;;
+70011710;10;07/04/2026;;765;503022;ADHESIVE TAPE  NEXANS  RUISZZ0031 PVC;1;UN;ANDRITZ1;20250708;07/04/2026;27/01/1900;AUSA;;
+70011711;10;07/04/2026;;765;503025;ADHESIVE TAPE  NEXANS  RUISZZ0020 TAP;2;UN;ANDRITZ1;20250728;07/04/2026;27/01/1900;AUSA;;
+70011702;10;26/03/2026;;765;516458;SAFETY SLEEVE | NETZSCH MOHNOPUMPEN | 86;1;UN;ANDRITZ1;20260622;26/03/2026;08/02/1900;AUSA;;
+70011703;10;26/03/2026;;765;518073;COUPLING ROD | NETZSCH NDB4825314;1;UN;ANDRITZ1;20260422;26/03/2026;08/02/1900;AUSA;;
+70011704;10;26/03/2026;;765;518120;COUPLING ROD | NETZSCH NDB4825316 | B |;1;UN;ANDRITZ1;20260402;26/03/2026;08/02/1900;AUSA;;
+20104840;10;25/03/2026;2002;342;;Grapos Puerto;2;UN;LBALDI;20260401;25/03/2026;09/02/1900;CE;;Licitación Completa
+70011698;10;24/03/2026;;765;507063;ELASTOMERIC COUPLING - REX VIVA | VS 125;1;UN;ANDRITZ1;20260624;24/03/2026;10/02/1900;AUSA;;
+30000767;10;23/03/2026;2001;751;300380;Azotea de sala eléctrica - Caldera Rec.;1;UN;ELOVATTO;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+30000767;20;23/03/2026;2001;751;300382;LLSS Azotea de sala eléctrica - CR;1;UN;ELOVATTO;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+30000767;30;23/03/2026;2001;751;300380;Silo de Chips - Caldera Biomasa;1;UN;MREZK;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+30000767;40;23/03/2026;2001;751;300382;LLSS Silo de Chips - Caldera Biomasa;1;UN;MREZK;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+30000767;50;23/03/2026;2001;751;300380;Chimenea - Caldera Biomasa;1;UN;MREZK;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+30000767;60;23/03/2026;2001;751;300382;LLSS Chimenea - Caldera Biomasa;1;UN;MREZK;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+30000767;70;23/03/2026;2001;751;300380;Pintura calles - Planta;1;UN;MREZK;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+30000767;80;23/03/2026;2001;751;300382;LLSS Pintura calles - Planta;1;UN;MREZK;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+30000767;90;23/03/2026;2001;751;300380;Pintura paredes - Comedor;1;UN;MREZK;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+30000767;100;23/03/2026;2001;751;300382;LLSS Pintura paredes - Comedor;1;UN;MREZK;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+30000767;110;23/03/2026;2001;751;300380;Pintar estructuras ARC - Evaporación;1;UN;MREZK;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+30000767;120;23/03/2026;2001;751;300382;LLSS Pintar estructuras ARC - Eva.;1;UN;MREZK;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+30000767;130;23/03/2026;2001;751;300380;Contención tanque de fuel oil;1;UN;MREZK;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+30000767;140;23/03/2026;2001;751;300382;LLSS Contención tanque de fuel oil;1;UN;MREZK;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+30000767;150;23/03/2026;2001;751;300380;Planta baja y piso DDWs;1;UN;MREZK;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+30000767;160;23/03/2026;2001;751;300382;LLSS Planta baja y piso DDWs;1;UN;MREZK;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+30000767;170;23/03/2026;2001;751;300380;Azotea sala eléctrica - Patio Madera;1;UN;MREZK;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+30000767;180;23/03/2026;2001;751;300382;LLSS Azotea sala eléctrica - Patio Mader;1;UN;MREZK;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+30000767;190;23/03/2026;2001;751;300380;Tanque ácido sulfúrico - Planta Qúmica;1;UN;MREZK;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+30000767;200;23/03/2026;2001;751;300382;LLSS Tanque ácido sulfúrico - Planta Qúm;1;UN;MREZK;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+30000767;210;23/03/2026;2001;751;300380;Azotea sala eléctrica wet end L2- Secado;1;UN;MREZK;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+30000767;220;23/03/2026;2001;751;300382;LLSS Azotea sala eléctrica wet end L2;1;UN;MREZK;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+30000767;230;23/03/2026;2001;751;300380;Techo sobre secadores - Secado;1;UN;MREZK;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+30000767;240;23/03/2026;2001;751;300382;LLSS Techo sobre secadores - Secado;1;UN;MREZK;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+30000767;250;23/03/2026;2001;751;300380;Pintar delimitaciones, sendas, etc;1;UN;MREZK;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+30000767;260;23/03/2026;2001;751;300382;LLSS Pintar delimitaciones, sendas, etc;1;UN;MREZK;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+30000767;270;23/03/2026;2001;751;300380;Pintar paredes - Workshop;1;UN;MREZK;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+30000767;280;23/03/2026;2001;751;300382;LLSS Pintar paredes - Workshop;1;UN;MREZK;20260331;23/03/2026;11/02/1900;MR;;Licitación Completa
+70011682;10;19/03/2026;;765;511424;FILTER / HDP 40 / 70;1;UN;ANDRITZ1;20260605;19/03/2026;15/02/1900;AUSA;;
+70011684;10;19/03/2026;;751;508028;REPAIR KIT | GARDNER DENVER | 8692000007;1;UN;ANDRITZ1;20260323;19/03/2026;15/02/1900;AUSA;;
+70011665;10;17/03/2026;;765;516916;SEAL SET | HYDORING | HD 6020 63/45 |;1;UN;ANDRITZ1;20260616;17/03/2026;17/02/1900;AUSA;;
+70011673;10;17/03/2026;;765;518081;HEATING ELEMENT | FLS | 190.028.176;4;UN;ANDRITZ1;20260324;17/03/2026;17/02/1900;AUSA;;
+70011674;10;17/03/2026;;765;518083;PROFIBUS DP TERMINATOR T1    101-00211A;4;UN;ANDRITZ1;20260324;17/03/2026;17/02/1900;AUSA;;
+70011675;10;17/03/2026;;754;502501;RELAY ABB REF630VBF AABADBAAZFEN BXB41BI;1;UN;ANDRITZ1;20260202;17/03/2026;17/02/1900;AUSA;;
+70011676;10;17/03/2026;;765;502508;RELAY ABB REF630 VBF AABAC BAA ZF EN BXB;1;UN;ANDRITZ1;20251021;17/03/2026;17/02/1900;AUSA;;
+70011677;10;17/03/2026;;765;517055;REPAIR KIT | NASH PP1058590;1;UN;ANDRITZ1;20260324;17/03/2026;17/02/1900;AUSA;;
+70011636;10;09/03/2026;;765;518045;SPRINKLER V2704, QR, UPRIGHT, K5,6 68°C,;9;UN;ANDRITZ1;20260407;09/03/2026;25/02/1900;AUSA;;
+70011637;10;09/03/2026;;765;518055;SPRINKLER VK536, PENDENT, K11,2 79°C, NP;6;UN;ANDRITZ1;20260407;09/03/2026;25/02/1900;AUSA;;
+70011638;10;09/03/2026;;765;518045;SPRINKLER V2704, QR, UPRIGHT, K5,6 68°C,;3;UN;ANDRITZ1;20260407;09/03/2026;25/02/1900;AUSA;;
+70011639;10;09/03/2026;;765;518046;SPRINKLER V3404, QR, UPRIGHT, K11,2 68°C;2;UN;ANDRITZ1;20260407;09/03/2026;25/02/1900;AUSA;;
+70011640;10;09/03/2026;;765;518049;SPRINKLER V3402, QR, UPRIGHT, K8,0 68°C,;2;UN;ANDRITZ1;20260407;09/03/2026;25/02/1900;AUSA;;
+70011641;10;09/03/2026;;765;518050;SPRINKLER TY9286, QR, PENDENT, K33,6 74°;8;UN;ANDRITZ1;20260407;09/03/2026;25/02/1900;AUSA;;
+70011642;10;09/03/2026;;765;518053;SPRINKLER VK580, SR, UPRIGHT, K16,8 141°;6;UN;ANDRITZ1;20260407;09/03/2026;25/02/1900;AUSA;;
+70011643;10;09/03/2026;;765;518057;NOZZLE | ANSUL 443317 | 1N | CHROME-PLAT;6;UN;ANDRITZ1;20260407;09/03/2026;25/02/1900;AUSA;;
+70011644;10;09/03/2026;;765;518059;ACCESSORY COVER BOLT | VICTAULIC | 1-1/2;1;UN;ANDRITZ1;20260407;09/03/2026;25/02/1900;AUSA;;
+70011645;10;09/03/2026;;765;518060;KIT I-30 CLAPPER SEAL REPLACING | VICTAU;1;UN;ANDRITZ1;20260407;09/03/2026;25/02/1900;AUSA;;
+70011646;10;09/03/2026;;765;518061;KIT ACTUATOR REBUILD | VICTAULIC | 1 1/2;1;UN;ANDRITZ1;20260407;09/03/2026;25/02/1900
