@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Panel de Gestión — Compras</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+body{background:#f8f9fa;color:#1a1a1a;font-size:14px}
+:root{--blue:#1e40af;--blue-bg:#dbeafe;--green:#166534;--green-bg:#dcfce7;--amber:#92400e;--amber-bg:#fef3c7;--red:#991b1b;--red-bg:#fee2e2;--purple:#5b21b6;--purple-bg:#ede9fe;--border:#e5e7eb;--muted:#6b7280;--surface:#fff;--page:#f3f4f6}
+button{cursor:pointer;font-family:inherit;font-size:13px;padding:5px 12px;border-radius:6px;border:.5px solid #d1d5db;background:#fff;color:#1a1a1a}
+button:hover{background:#f3f4f6}
+select,input,textarea{font-family:inherit;font-size:13px;padding:5px 8px;border-radius:6px;border:.5px solid #d1d5db;background:#fff;color:#1a1a1a;width:100%}
+select:focus,input:focus,textarea:focus{outline:none;border-color:#3b82f6}
+.badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.avatar{border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:600;flex-shrink:0}
+.card{background:var(--surface);border-radius:10px;border:.5px solid var(--border);padding:12px 14px}
+.metric{background:var(--page);border-radius:8px;padding:12px 14px}
+.metric .val{font-size:28px;font-weight:500;margin-top:4px}
+.metric .lbl{font-size:12px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{padding:7px 10px;text-align:left;font-weight:500;color:var(--muted);border-bottom:.5px solid #d1d5db;white-space:nowrap}
+td{padding:7px 10px;border-bottom:.5px solid var(--border);vertical-align:middle}
+tr:hover td{background:#f9fafb;cursor:pointer}
+.tag{font-size:11px;padding:2px 7px;border-radius:99px;display:inline-block}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;display:flex;align-items:center;justify-content:center}
+.modal{background:#fff;border-radius:12px;padding:1.5rem;width:500px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.field{margin-bottom:10px}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
+.nav-btn{font-size:13px;padding:4px 10px;border-radius:6px;border:none;background:transparent;color:#1a1a1a}
+.nav-btn.active{background:#e5e7eb;font-weight:500}
+.sem{display:inline-flex;align-items:center;gap:5px}
+.sem .dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0}
+#app{min-height:100vh}
+header{border-bottom:.5px solid var(--border);padding:0 1.25rem;display:flex;align-items:center;justify-content:space-between;height:50px;background:#fff}
+.content{padding:1.25rem}
+h2{font-size:18px;font-weight:500;margin-bottom:16px}
+h3{font-size:15px;font-weight:500;margin-bottom:10px}
+.grid-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:24px}
+.grid-team{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px}
+.grid-list{display:grid;gap:10px}
+.row-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.filters select{width:auto}
+.overflow{overflow-x:auto}
+.ms-btn{display:flex;align-items:center;justify-content:center;gap:10px;padding:9px;border-radius:8px;border:.5px solid #d1d5db;background:#fff;font-size:13px;font-weight:500;width:100%}
+.notice{background:#fef9c3;border:.5px solid #fde047;border-radius:8px;padding:8px 12px;font-size:12px;color:#854d0e;margin-top:10px}
+.sep{display:flex;align-items:center;gap:10px;margin:14px 0}
+.sep span{font-size:12px;color:var(--muted);white-space:nowrap}
+.sep hr{flex:1;border:none;border-top:.5px solid var(--border)}
+.login-list{display:flex;flex-direction:column;gap:5px}
+.login-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;border:.5px solid #d1d5db;background:#fff;cursor:pointer;text-align:left;width:100%}
+.login-item.sel{border:1.5px solid #3b82f6;background:#eff6ff}
+.login-name{font-size:13px;font-weight:500}
+.login-sub{font-size:11px;color:var(--muted)}
+.btn-primary{background:#2563eb;color:#fff;border:none;padding:10px;border-radius:8px;font-size:14px;font-weight:500;width:100%;margin-top:12px}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;font-size:13px;margin-bottom:14px}
+.detail-key{font-size:11px;color:var(--muted)}
+.detail-val{font-weight:500}
+.mono{font-family:'Courier New',monospace;font-size:12px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const ROLES={ADMIN:"admin",EDITOR:"editor",VISOR:"visor"};
+const USUARIOS=[
+  {id:1,nombre:"Edgardo Piñeiro",ini:"EP",rol:ROLES.ADMIN,tipo:"Manager"},
+  {id:2,nombre:"Carolina Collazo",ini:"CC",rol:ROLES.ADMIN,tipo:"Process Leader"},
+  {id:3,nombre:"Carolina Buceta",ini:"CB",rol:ROLES.ADMIN,tipo:"Process Leader"},
+  {id:4,nombre:"Cecilia Repetto",ini:"CR",rol:ROLES.ADMIN,tipo:"Process Leader"},
+  {id:5,nombre:"Gabriel Dávila",ini:"GD",rol:ROLES.ADMIN,tipo:"Process Leader"},
+  {id:6,nombre:"Cecilia Echenique",ini:"CE",rol:ROLES.EDITOR,tipo:"Analista"},
+  {id:7,nombre:"Pamela Ortiz",ini:"PO",rol:ROLES.EDITOR,tipo:"Analista"},
+  {id:8,nombre:"Luciana Sanguinetti",ini:"LS",rol:ROLES.EDITOR,tipo:"Analista"},
+  {id:9,nombre:"Mauricio Rezk",ini:"MR",rol:ROLES.EDITOR,tipo:"Analista"},
+  {id:10,nombre:"Natalia Beltrán",ini:"NB",rol:ROLES.EDITOR,tipo:"Analista"},
+  {id:11,nombre:"Florencia Ramos",ini:"FR",rol:ROLES.EDITOR,tipo:"Analista"},
+  {id:12,nombre:"Georgina Domeniguini",ini:"GDOM",rol:ROLES.EDITOR,tipo:"Asistente"},
+  {id:13,nombre:"Agustina Baldi",ini:"AB",rol:ROLES.EDITOR,tipo:"Asistente"},
+  {id:14,nombre:"Javier Schenone",ini:"JS",rol:ROLES.VISOR,tipo:"Gerencia A&F"},
+];
+const CATEGORIAS=[
+  {id:1,codigo:"NLP",nombre:"Negociación Largo Plazo",dias:3,tipo:"habiles"},
+  {id:2,codigo:"EMISIÓN",nombre:"Emisión de OC",dias:3,tipo:"habiles"},
+  {id:3,codigo:"SA",nombre:"Soporte Administrativo",dias:3,tipo:"habiles"},
+  {id:4,codigo:"ADJ.",nombre:"Adj. Directa",dias:3,tipo:"habiles"},
+  {id:5,codigo:"COT.",nombre:"Cotización",dias:7,tipo:"habiles"},
+  {id:6,codigo:"LP",nombre:"Llamado de Precios",dias:21,tipo:"corridos"},
+  {id:7,codigo:"LIC.S",nombre:"Licitación simple",dias:45,tipo:"corridos"},
+  {id:8,codigo:"LIC.",nombre:"Licitación",dias:120,tipo:"corridos"},
+];
+const ESTADOS=["Pendiente","En proceso","Completado","Cancelado"];
+const ESTADOS_LIC=["Publicada","En evaluación","Adjudicada","Desierta","Cancelada"];
+const ESTADOS_LOG=["Pendiente","En tránsito","Recibido","Con incidencia","Cerrado"];
+
+let state={
+  usuario:null,selLogin:null,modulo:"dashboard",
+  solicitudes:[
+    {id:1,nro:"70011845",pos:"11",fecha:"2026-05-01",material:"1201172",texto:"CHEMICALS -SIL CR HACH 21008-03 SIL STDR",cant:2,unidad:"UN",creadoPor:"R/Aguas-Eflu",fechaEnt:"2026-08-10",diasDesde:3,compIni:"AB",comentario:"",catId:null,estado:"Pendiente"},
+    {id:2,nro:"70011846",pos:"11",fecha:"2026-05-01",material:"1203650",texto:"VIBRATION SENSOR|SKF PULSE|CMDT 391-K-SL",cant:1,unidad:"PI",creadoPor:"R/Rep.Mant",fechaEnt:"2026-07-10",diasDesde:3,compIni:"AB",comentario:"",catId:null,estado:"Pendiente"},
+    {id:3,nro:"80001379",pos:"10",fecha:"2026-04-30",material:"507140",texto:"SLIDING PLATE L 330 W 116 MM",cant:40,unidad:"UN",creadoPor:"RBAZZO",fechaEnt:"2026-12-30",diasDesde:4,compIni:"GD",comentario:"",catId:null,estado:"En proceso"},
+  ],
+  licitaciones:[
+    {id:1,nro:"LIC-2026-01",desc:"Servicio de seguridad",estado:"En evaluación",respIni:"CC",fechaPub:"2026-04-01",fechaCierre:"2026-05-15",monto:"USD 120.000"},
+    {id:2,nro:"LIC-2026-02",desc:"Transporte de carga",estado:"Publicada",respIni:"CB",fechaPub:"2026-04-20",fechaCierre:"2026-06-01",monto:"USD 85.000"},
+  ],
+  logistica:[
+    {id:1,nro:"LOG-001",desc:"Entrega equipos informáticos",estado:"En tránsito",respIni:"AB",fechaEsp:"2026-05-07",proveedor:"Tech Supply SA",origen:"Buenos Aires"},
+    {id:2,nro:"LOG-002",desc:"Recepción mobiliario",estado:"Pendiente",respIni:"GDOM",fechaEsp:"2026-05-12",proveedor:"Muebles Norte",origen:"Montevideo"},
+  ],
+  categorias:[...CATEGORIAS],
+  filtroComp:"todos",filtroEst:"todos",
+  detalle:null,modal:null,
+};
+
+const HOY=new Date("2026-05-04");
+function esDiaHabil(d){const w=d.getDay();return w!==0&&w!==6;}
+function diasHabiles(f){let c=0,d=new Date(f);while(d<=HOY){if(esDiaHabil(d))c++;d.setDate(d.getDate()+1);}return Math.max(0,c-1);}
+function diasCorridos(f){return Math.max(0,Math.floor((HOY-new Date(f))/86400000));}
+function calcDias(f,cat){return cat?cat.tipo==="habiles"?diasHabiles(f):diasCorridos(f):0;}
+function getU(ini){return USUARIOS.find(u=>u.ini===ini);}
+function getCat(id){return state.categorias.find(c=>c.id===id);}
+function initials(n){return n.split(" ").map(x=>x[0]).join("").slice(0,2).toUpperCase();}
+function avatarStyle(rol,size){
+  const bg=rol===ROLES.ADMIN?"#dbeafe":rol===ROLES.EDITOR?"#dcfce7":"#fef3c7";
+  const color=rol===ROLES.ADMIN?"#1e40af":rol===ROLES.EDITOR?"#166534":"#92400e";
+  return `width:${size}px;height:${size}px;background:${bg};color:${color};font-size:${Math.round(size*.34)}px;`;
+}
+function avatarHTML(nombre,rol,size){return `<div class="avatar" style="${avatarStyle(rol,size)}">${initials(nombre)}</div>`;}
+function badgeColor(e){
+  const m={"Pendiente":["#fef3c7","#92400e"],"En proceso":["#dbeafe","#1e40af"],"Completado":["#dcfce7","#166534"],"Cancelado":["#fee2e2","#991b1b"],"Publicada":["#e0f2fe","#0369a1"],"En evaluación":["#fef9c3","#854d0e"],"Adjudicada":["#dcfce7","#166534"],"Desierta":["#f3f4f6","#374151"],"En tránsito":["#ede9fe","#5b21b6"],"Recibido":["#dcfce7","#166534"],"Con incidencia":["#fee2e2","#991b1b"],"Cerrado":["#f3f4f6","#374151"]};
+  return m[e]||["#f3f4f6","#374151"];
+}
+function badge(e){const[bg,c]=badgeColor(e);return `<span class="badge" style="background:${bg};color:${c}">${e}</span>`;}
+function semaforo(dias,cat){
+  if(!cat)return`<span style="color:var(--muted)">${dias}d</span>`;
+  const p=dias/cat.dias;
+  const[color,label]=p<.6?["#22c55e","En plazo"]:p<1?["#f59e0b","Por vencer"]:["#ef4444","Vencido"];
+  return`<span class="sem"><span class="dot" style="background:${color}"></span><span style="font-size:12px;color:${color};font-weight:500">${label}</span><span style="font-size:11px;color:var(--muted)">(${dias}/${cat.dias}d ${cat.tipo==="habiles"?"háb.":"corr."})</span></span>`;
+}
+
+function render(){document.getElementById("app").innerHTML=state.usuario?renderApp():renderLogin();bindEvents();}
+
+function renderLogin(){
+  return`<div style="padding:2rem;max-width:500px;margin:0 auto">
+    <h2 style="margin-bottom:4px">Panel de Gestión — Compras</h2>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:20px">Seleccioná tu perfil para continuar</p>
+    <div class="card" style="margin-bottom:16px">
+      <button class="ms-btn" disabled style="opacity:.7">
+        <svg width="16" height="16" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+        Iniciar sesión con Microsoft
+      </button>
+      <div class="notice">Pendiente de Client ID — IT registra la app en Azure AD para activar esta opción.</div>
+    </div>
+    <div class="sep"><hr><span>o seleccioná tu perfil</span><hr></div>
+    <div class="login-list">
+      ${USUARIOS.map(u=>`
+        <button class="login-item${state.selLogin===u.id?" sel":""}" data-login="${u.id}">
+          ${avatarHTML(u.nombre,u.rol,32)}
+          <div style="flex:1"><div class="login-name">${u.nombre}</div><div class="login-sub">${u.tipo} · ${u.ini}</div></div>
+          <span class="badge" style="background:${u.rol===ROLES.ADMIN?"#dbeafe":u.rol===ROLES.EDITOR?"#dcfce7":"#fef3c7"};color:${u.rol===ROLES.ADMIN?"#1e40af":u.rol===ROLES.EDITOR?"#166534":"#92400e"}">${u.rol}</span>
+        </button>`).join("")}
+    </div>
+    ${state.selLogin?`<button class="btn-primary" id="btn-ingresar">Ingresar como ${USUARIOS.find(u=>u.id===state.selLogin)?.nombre}</button>`:""}
+  </div>`;
+}
+
+function renderApp(){
+  const u=state.usuario;
+  const esAdmin=u.rol===ROLES.ADMIN;
+  const puedeEditar=u.rol!==ROLES.VISOR;
+  const navs=["dashboard","solicitudes","licitaciones","logistica",...(esAdmin?["config"]:[])];
+  const navLabels={dashboard:"Dashboard",solicitudes:"Solicitudes",licitaciones:"Licitaciones",logistica:"Logística",config:"Configuración"};
+  let content="";
+  if(state.modulo==="dashboard")content=renderDashboard();
+  else if(state.modulo==="solicitudes")content=renderSolicitudes(puedeEditar);
+  else if(state.modulo==="licitaciones")content=renderLicitaciones(puedeEditar);
+  else if(state.modulo==="logistica")content=renderLogistica(puedeEditar);
+  else if(state.modulo==="config"&&esAdmin)content=renderConfig();
+  return`
+    <header>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:14px;font-weight:500">Compras</span>
+        <div style="display:flex;gap:2px">${navs.map(n=>`<button class="nav-btn${state.modulo===n?" active":""}" data-nav="${n}">${navLabels[n]}</button>`).join("")}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        ${avatarHTML(u.nombre,u.rol,28)}
+        <div style="line-height:1.2"><div style="font-size:13px;font-weight:500">${u.nombre}</div><div style="font-size:11px;color:var(--muted)">${u.tipo} · ${u.ini}</div></div>
+        <button id="btn-salir" style="font-size:12px;color:var(--muted);border:none;background:transparent">Salir</button>
+      </div>
+    </header>
+    <div class="content">${content}</div>
+    ${state.detalle?renderDetalle(puedeEditar):""}
+    ${state.modal?renderModal():""}`;
+}
+
+function renderDashboard(){
+  const activas=state.solicitudes.filter(s=>!["Completado","Cancelado"].includes(s.estado));
+  const venc=activas.filter(s=>{const c=getCat(s.catId);return c&&calcDias(s.fecha,c)>c.dias;});
+  const sinCat=activas.filter(s=>!s.catId);
+  const licAct=state.licitaciones.filter(l=>!["Adjudicada","Desierta","Cancelada"].includes(l.estado));
+  return`<h2>Resumen general</h2>
+    <div class="grid-metrics">
+      ${[["Solicitudes activas",activas.length,"#1e40af"],["Vencidas",venc.length,"#991b1b"],["Sin categorizar",sinCat.length,"#92400e"],["Licitaciones activas",licAct.length,"#5b21b6"]].map(([l,v,c])=>`<div class="metric"><div class="lbl">${l}</div><div class="val" style="color:${c}">${v}</div></div>`).join("")}
+    </div>
+    <h3>Por comprador</h3>
+    <div class="grid-team">
+      ${USUARIOS.filter(u=>u.tipo==="Analista"||u.tipo==="Asistente").map(u=>{
+        const solU=state.solicitudes.filter(s=>s.compIni===u.ini&&!["Completado","Cancelado"].includes(s.estado));
+        const vencU=solU.filter(s=>{const c=getCat(s.catId);return c&&calcDias(s.fecha,c)>c.dias;});
+        return`<div class="card" style="display:flex;align-items:center;gap:10px">${avatarHTML(u.nombre,u.rol,30)}<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.nombre}</div><div style="font-size:11px;color:var(--muted);margin-bottom:4px">${u.tipo}</div><div style="display:flex;gap:5px;flex-wrap:wrap"><span class="tag" style="background:#dbeafe;color:#1e40af">${solU.length} activas</span>${vencU.length?`<span class="tag" style="background:#fee2e2;color:#991b1b">${vencU.length} vencidas</span>`:""}</div></div></div>`;
+      }).join("")}
+    </div>`;
+}
+
+function renderSolicitudes(puedeEditar){
+  const filtradas=state.solicitudes.filter(s=>(state.filtroComp==="todos"||s.compIni===state.filtroComp)&&(state.filtroEst==="todos"||s.estado===state.filtroEst));
+  return`<div class="row-top">
+      <h2 style="margin:0">Solicitudes de pedido</h2>
+      <div class="filters">
+        <select id="fil-comp" style="width:auto"><option value="todos">Todos los compradores</option>${USUARIOS.filter(u=>u.tipo==="Analista"||u.tipo==="Asistente").map(u=>`<option value="${u.ini}"${state.filtroComp===u.ini?" selected":""}>${u.nombre}</option>`).join("")}</select>
+        <select id="fil-est" style="width:auto"><option value="todos">Todos los estados</option>${ESTADOS.map(e=>`<option${state.filtroEst===e?" selected":""}>${e}</option>`).join("")}</select>
+        ${puedeEditar?`<button id="btn-import">Importar CSV</button><input type="file" id="file-csv" accept=".csv,.txt" style="display:none">`:""}
+      </div>
+    </div>
+    <div class="overflow"><table>
+      <thead><tr><th>Solicitud</th><th>Material</th><th>Texto breve</th><th>Creado por</th><th>Días</th><th>Estado</th><th>Categorización</th><th>Comentario</th></tr></thead>
+      <tbody>${filtradas.length?filtradas.map(s=>{
+        const cat=getCat(s.catId);const dias=cat?calcDias(s.fecha,cat):s.diasDesde;
+        return`<tr data-sol="${s.id}"><td style="font-weight:500;white-space:nowrap">${s.nro}<span style="color:var(--muted);font-weight:400">/${s.pos}</span></td><td class="mono">${s.material}</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.texto}</td><td style="white-space:nowrap">${s.creadoPor}</td><td style="white-space:nowrap">${semaforo(dias,cat)}</td><td>${badge(s.estado)}</td><td>${cat?`<span class="tag" style="background:#f3f4f6;color:#374151">${cat.codigo} — ${cat.nombre}</span>`:`<span style="font-size:12px;color:#f59e0b;font-weight:500">Sin categoría</span>`}</td><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)">${s.comentario||"—"}</td></tr>`;
+      }).join(""):`<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--muted)">No hay solicitudes con los filtros seleccionados</td></tr>`}</tbody>
+    </table></div>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px">Hacé clic en una fila para ver el detalle y editar categorización o comentario.</p>`;
+}
+
+function renderLicitaciones(puedeEditar){
+  return`<div class="row-top"><h2 style="margin:0">Licitaciones</h2>${puedeEditar?`<button id="btn-lic-nueva" style="background:#dbeafe;color:#1e40af;border-color:#bfdbfe">+ Nueva</button>`:""}</div>
+    <div class="grid-list">${state.licitaciones.map(l=>{const resp=getU(l.respIni);return`<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px"><div><div style="font-weight:500;font-size:14px">${l.nro} — ${l.desc}</div><div style="font-size:12px;color:var(--muted);margin-top:3px">Responsable: ${resp?.nombre||l.respIni} · Publicación: ${l.fechaPub} · Cierre: ${l.fechaCierre}</div><div style="font-size:12px;color:var(--muted)">Monto estimado: ${l.monto}</div></div><div style="display:flex;align-items:center;gap:8px">${badge(l.estado)}${puedeEditar?`<select class="sel-lic-estado" data-lid="${l.id}" style="width:auto;font-size:12px">${ESTADOS_LIC.map(e=>`<option${l.estado===e?" selected":""}>${e}</option>`).join("")}</select>`:""}</div></div></div>`;}).join("")}</div>`;
+}
+
+function renderLogistica(puedeEditar){
+  return`<div class="row-top"><h2 style="margin:0">Coordinaciones logísticas</h2>${puedeEditar?`<button id="btn-log-nueva" style="background:#dbeafe;color:#1e40af;border-color:#bfdbfe">+ Nueva</button>`:""}</div>
+    <div class="grid-list">${state.logistica.map(l=>{const resp=getU(l.respIni);return`<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px"><div><div style="font-weight:500;font-size:14px">${l.nro} — ${l.desc}</div><div style="font-size:12px;color:var(--muted);margin-top:3px">Proveedor: ${l.proveedor} · Origen: ${l.origen} · Fecha esperada: ${l.fechaEsp}</div><div style="font-size:12px;color:var(--muted)">Responsable: ${resp?.nombre||l.respIni}</div></div><div style="display:flex;align-items:center;gap:8px">${badge(l.estado)}${puedeEditar?`<select class="sel-log-estado" data-lid="${l.id}" style="width:auto;font-size:12px">${ESTADOS_LOG.map(e=>`<option${l.estado===e?" selected":""}>${e}</option>`).join("")}</select>`:""}</div></div></div>`;}).join("")}</div>`;
+}
+
+function renderConfig(){
+  return`<h2>Configuración</h2>
+    <h3>Categorías y plazos estándar</h3>
+    <div style="display:grid;gap:8px;margin-bottom:14px">${state.categorias.map(c=>`<div style="display:flex;align-items:center;gap:8px;border:.5px solid var(--border);border-radius:8px;padding:8px 12px;background:#fff"><input class="cfg-cod" data-cid="${c.id}" value="${c.codigo}" style="width:70px"><input class="cfg-nom" data-cid="${c.id}" value="${c.nombre}" style="flex:1"><input type="number" class="cfg-dias" data-cid="${c.id}" value="${c.dias}" min="1" style="width:54px"><select class="cfg-tipo" data-cid="${c.id}" style="width:auto"><option value="habiles"${c.tipo==="habiles"?" selected":""}>Hábiles</option><option value="corridos"${c.tipo==="corridos"?" selected":""}>Corridos</option></select><button class="cfg-del" data-cid="${c.id}" style="color:#991b1b;border:none;background:transparent;font-size:12px">Eliminar</button></div>`).join("")}</div>
+    <button id="btn-cat-add">+ Agregar categoría</button>
+    <h3 style="margin-top:24px">Equipo</h3>
+    <div style="display:grid;gap:6px">${USUARIOS.map(u=>`<div style="display:flex;align-items:center;gap:10px;border:.5px solid var(--border);border-radius:8px;padding:7px 12px">${avatarHTML(u.nombre,u.rol,26)}<span style="flex:1;font-weight:500;font-size:13px">${u.nombre}</span><span class="mono" style="color:var(--muted)">${u.ini}</span><span style="color:var(--muted);font-size:12px">${u.tipo}</span><span class="badge" style="background:${u.rol===ROLES.ADMIN?"#dbeafe":u.rol===ROLES.EDITOR?"#dcfce7":"#fef3c7"};color:${u.rol===ROLES.ADMIN?"#1e40af":u.rol===ROLES.EDITOR?"#166534":"#92400e"}">${u.rol}</span></div>`).join("")}</div>`;
+}
+
+function renderDetalle(puedeEditar){
+  const s=state.detalle;const cat=getCat(s.catId);const dias=cat?calcDias(s.fecha,cat):s.diasDesde;const comp=getU(s.compIni);
+  return`<div class="modal-bg" id="modal-bg-det"><div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+      <div><div style="font-size:16px;font-weight:500">${s.nro} / ${s.pos}</div><div style="font-size:12px;color:var(--muted)">${s.texto}</div></div>
+      <button id="btn-det-close" style="border:none;background:transparent;font-size:16px;color:var(--muted)">✕</button>
+    </div>
+    <div class="detail-grid">${[["Material",`<span class="mono">${s.material}</span>`],["Cantidad",`${s.cant} ${s.unidad}`],["Creado por",s.creadoPor],["Fecha solicitud",s.fecha],["Fecha entrega",s.fechaEnt],["Comprador",comp?.nombre||s.compIni]].map(([k,v])=>`<div><div class="detail-key">${k}</div><div class="detail-val">${v}</div></div>`).join("")}</div>
+    <div style="border-top:.5px solid var(--border);padding-top:12px;display:grid;gap:10px">
+      <div class="field"><label>Categorización</label>${puedeEditar?`<select id="det-cat"><option value="">— Sin categoría —</option>${state.categorias.map(c=>`<option value="${c.id}"${s.catId===c.id?" selected":""}>${c.codigo} — ${c.nombre} (${c.dias}d ${c.tipo==="habiles"?"háb.":"corr."})</option>`).join("")}</select>`:`<div style="font-size:13px;font-weight:500">${cat?`${cat.codigo} — ${cat.nombre}`:"Sin categoría"}</div>`}</div>
+      ${cat?`<div style="font-size:13px">${semaforo(dias,cat)}</div>`:""}
+      <div class="field"><label>Estado</label>${puedeEditar?`<select id="det-est">${ESTADOS.map(e=>`<option${s.estado===e?" selected":""}>${e}</option>`).join("")}</select>`:`<div>${badge(s.estado)}</div>`}</div>
+      <div class="field"><label>Comentario</label>${puedeEditar?`<textarea id="det-com" rows="3" style="resize:vertical">${s.comentario||""}</textarea>`:`<div style="font-size:13px">${s.comentario||`<span style="color:var(--muted)">Sin comentarios</span>`}</div>`}</div>
+    </div>
+    ${puedeEditar?`<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px"><button id="btn-det-cancel">Cancelar</button><button id="btn-det-save" style="background:#dbeafe;color:#1e40af;border-color:#bfdbfe">Guardar</button></div>`:""}
+  </div></div>`;
+}
+
+function renderModal(){
+  const m=state.modal;
+  if(m==="lic")return`<div class="modal-bg" id="modal-bg-form"><div class="modal"><h3 style="margin-bottom:14px">Nueva licitación</h3>${[["Nro","lic-nro"],["Descripción","lic-desc"],["Monto estimado","lic-monto"],["Fecha publicación","lic-fpub"],["Fecha cierre","lic-fcie"]].map(([l,id])=>`<div class="field"><label>${l}</label><input id="${id}"></div>`).join("")}<div class="field"><label>Responsable</label><select id="lic-resp">${USUARIOS.filter(u=>u.rol===ROLES.ADMIN).map(u=>`<option value="${u.ini}">${u.nombre}</option>`).join("")}</select></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px"><button id="btn-modal-cancel">Cancelar</button><button id="btn-modal-save" style="background:#dbeafe;color:#1e40af;border-color:#bfdbfe">Guardar</button></div></div></div>`;
+  if(m==="log")return`<div class="modal-bg" id="modal-bg-form"><div class="modal"><h3 style="margin-bottom:14px">Nueva coordinación logística</h3>${[["Nro","log-nro"],["Descripción","log-desc"],["Proveedor","log-prov"],["Origen","log-orig"],["Fecha esperada","log-fesp"]].map(([l,id])=>`<div class="field"><label>${l}</label><input id="${id}"></div>`).join("")}<div class="field"><label>Responsable</label><select id="log-resp">${USUARIOS.filter(u=>u.tipo==="Analista"||u.tipo==="Asistente").map(u=>`<option value="${u.ini}">${u.nombre}</option>`).join("")}</select></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px"><button id="btn-modal-cancel">Cancelar</button><button id="btn-modal-save" style="background:#dbeafe;color:#1e40af;border-color:#bfdbfe">Guardar</button></div></div></div>`;
+  return"";
+}
+
+function g(id){return document.getElementById(id);}
+
+function bindEvents(){
+  document.querySelectorAll(".login-item").forEach(btn=>{btn.addEventListener("click",()=>{state.selLogin=Number(btn.dataset.login);render();});});
+  const bi=g("btn-ingresar");if(bi)bi.addEventListener("click",()=>{const u=USUARIOS.find(u=>u.id===state.selLogin);state.usuario=u;state.filtroComp=(u.tipo==="Analista"||u.tipo==="Asistente")?u.ini:"todos";state.modulo="dashboard";render();});
+  document.querySelectorAll(".nav-btn").forEach(b=>b.addEventListener("click",()=>{state.modulo=b.dataset.nav;render();}));
+  const bs=g("btn-salir");if(bs)bs.addEventListener("click",()=>{state.usuario=null;state.selLogin=null;render();});
+  const fc=g("fil-comp");if(fc)fc.addEventListener("change",()=>{state.filtroComp=fc.value;render();});
+  const fe=g("fil-est");if(fe)fe.addEventListener("change",()=>{state.filtroEst=fe.value;render();});
+  document.querySelectorAll("tr[data-sol]").forEach(tr=>{tr.addEventListener("click",()=>{state.detalle=state.solicitudes.find(s=>s.id===Number(tr.dataset.sol));render();});});
+  const bim=g("btn-import");const fcsv=g("file-csv");
+  if(bim&&fcsv){bim.addEventListener("click",()=>fcsv.click());fcsv.addEventListener("change",()=>{if(fcsv.files[0])importCSV(fcsv.files[0]);});}
+  const bdc=g("btn-det-close");if(bdc)bdc.addEventListener("click",()=>{state.detalle=null;render();});
+  const bdca=g("btn-det-cancel");if(bdca)bdca.addEventListener("click",()=>{state.detalle=null;render();});
+  const bds=g("btn-det-save");if(bds)bds.addEventListener("click",()=>{const s=state.detalle;const catId=Number(g("det-cat")?.value)||null;const est=g("det-est")?.value||s.estado;const com=g("det-com")?.value||"";state.solicitudes=state.solicitudes.map(x=>x.id===s.id?{...x,catId,estado:est,comentario:com}:x);state.detalle=null;render();});
+  const mbgd=g("modal-bg-det");if(mbgd)mbgd.addEventListener("click",e=>{if(e.target===mbgd){state.detalle=null;render();}});
+  document.querySelectorAll(".sel-lic-estado").forEach(sel=>{sel.addEventListener("change",()=>{const id=Number(sel.dataset.lid);state.licitaciones=state.licitaciones.map(l=>l.id===id?{...l,estado:sel.value}:l);render();});});
+  document.querySelectorAll(".sel-log-estado").forEach(sel=>{sel.addEventListener("change",()=>{const id=Number(sel.dataset.lid);state.logistica=state.logistica.map(l=>l.id===id?{...l,estado:sel.value}:l);render();});});
+  const bln=g("btn-lic-nueva");if(bln)bln.addEventListener("click",()=>{state.modal="lic";render();});
+  const blogn=g("btn-log-nueva");if(blogn)blogn.addEventListener("click",()=>{state.modal="log";render();});
+  const bmc=g("btn-modal-cancel");if(bmc)bmc.addEventListener("click",()=>{state.modal=null;render();});
+  const mbgf=g("modal-bg-form");if(mbgf)mbgf.addEventListener("click",e=>{if(e.target===mbgf){state.modal=null;render();}});
+  const bms=g("btn-modal-save");if(bms)bms.addEventListener("click",()=>{
+    if(state.modal==="lic"){state.licitaciones.push({id:Date.now(),nro:g("lic-nro").value,desc:g("lic-desc").value,estado:"Publicada",respIni:g("lic-resp").value,fechaPub:g("lic-fpub").value,fechaCierre:g("lic-fcie").value,monto:g("lic-monto").value});}
+    else{state.logistica.push({id:Date.now(),nro:g("log-nro").value,desc:g("log-desc").value,estado:"Pendiente",respIni:g("log-resp").value,fechaEsp:g("log-fesp").value,proveedor:g("log-prov").value,origen:g("log-orig").value});}
+    state.modal=null;render();
+  });
+  document.querySelectorAll(".cfg-cod").forEach(i=>i.addEventListener("change",()=>{const id=Number(i.dataset.cid);state.categorias=state.categorias.map(c=>c.id===id?{...c,codigo:i.value}:c);}));
+  document.querySelectorAll(".cfg-nom").forEach(i=>i.addEventListener("change",()=>{const id=Number(i.dataset.cid);state.categorias=state.categorias.map(c=>c.id===id?{...c,nombre:i.value}:c);}));
+  document.querySelectorAll(".cfg-dias").forEach(i=>i.addEventListener("change",()=>{const id=Number(i.dataset.cid);state.categorias=state.categorias.map(c=>c.id===id?{...c,dias:Number(i.value)}:c);}));
+  document.querySelectorAll(".cfg-tipo").forEach(i=>i.addEventListener("change",()=>{const id=Number(i.dataset.cid);state.categorias=state.categorias.map(c=>c.id===id?{...c,tipo:i.value}:c);}));
+  document.querySelectorAll(".cfg-del").forEach(b=>b.addEventListener("click",()=>{const id=Number(b.dataset.cid);state.categorias=state.categorias.filter(c=>c.id!==id);render();}));
+  const bca=g("btn-cat-add");if(bca)bca.addEventListener("click",()=>{state.categorias.push({id:Date.now(),codigo:"COD",nombre:"Nueva categoría",dias:7,tipo:"habiles"});render();});
+}
+
+function importCSV(file){
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const lines=e.target.result.split("\n").filter(Boolean);
+    const sep=lines[0].includes("\t")?"\t":",";
+    const raw=lines.map(l=>l.split(sep));
+    const headers=raw[0].map(h=>h.trim().toLowerCase().replace(/[\s.]/g,"").replace(/[áàä]/g,"a").replace(/[éèë]/g,"e").replace(/[íìï]/g,"i").replace(/[óòö]/g,"o").replace(/[úùü]/g,"u"));
+    const nuevas=raw.slice(1).map((cols,i)=>{
+      const r={};headers.forEach((h,j)=>r[h]=(cols[j]||"").trim().replace(/^"|"$/g,""));
+      return{id:Date.now()+i,nro:r["solicituddepedido"]||r["nro"]||`IMP-${i+1}`,pos:r["possolicitudpedido"]||r["pos"]||"10",fecha:r["fechadesolicitud"]||r["fecha"]||"",material:r["material"]||"",texto:r["textobreve"]||r["descripcion"]||"",cant:Number(r["cantidadsolicitada"]||1),unidad:r["unidaddemedida"]||"UN",creadoPor:r["creadopor"]||"",fechaEnt:r["fechadeentrega"]||"",diasDesde:Number(r["diasdesdemod"]||r["diasdesde"]||0),compIni:r["comprador"]||"",comentario:r["comentario"]||"",catId:null,estado:"Pendiente"};
+    }).filter(s=>s.nro&&s.nro.trim());
+    state.solicitudes=[...state.solicitudes,...nuevas];render();
+  };
+  reader.readAsText(file);
+}
+
+render();
+</script>
+</body>
+</html>
